@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>MotionControl</RootNamespace>
+    <AssemblyName>GlueDemo</AssemblyName>
+  </PropertyGroup>
+</Project>
+<!-- 用法: 把本文件放到工程根目录, dotnet build 即可（源码 C#5 兼容, 无改动迁移） -->

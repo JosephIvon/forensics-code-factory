@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>上位机代码工厂 v1.0 - 智能体</title>
+<style>
+  :root{
+    --bg:#0d1117;--panel:#161b22;--panel2:#1c2330;--line:#2d3646;
+    --txt:#e6edf3;--dim:#8b949e;--acc:#3fb950;--acc2:#58a6ff;--warn:#d29922;--err:#f85149;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font:14px/1.6 "Segoe UI","Microsoft YaHei",sans-serif;padding:0 0 60px}
+  header{padding:22px 28px 14px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#10151d,#0d1117)}
+  header h1{font-size:20px;font-weight:600}
+  header h1 .v{color:var(--acc);font-size:12px;border:1px solid var(--acc);border-radius:4px;padding:1px 6px;margin-left:8px;vertical-align:3px}
+  header p{color:var(--dim);font-size:13px;margin-top:4px}
+  nav{display:flex;gap:4px;padding:10px 28px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:9}
+  nav button{background:none;border:1px solid transparent;color:var(--dim);padding:7px 16px;border-radius:6px;cursor:pointer;font-size:14px}
+  nav button.on{color:var(--txt);background:var(--panel2);border-color:var(--line)}
+  nav button:hover{color:var(--txt)}
+  main{padding:20px 28px;max-width:1280px;margin:0 auto}
+  .tab{display:none}.tab.on{display:block}
+  h2{font-size:16px;margin:6px 0 12px;color:var(--acc2)}
+  h3{font-size:14px;margin:14px 0 8px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:var(--dim);font-weight:600;white-space:nowrap}
+  .s5{color:var(--acc)}.s4{color:#9ece6a}.s3{color:var(--warn)}.s2{color:#e3b341}.s1{color:var(--err)}
+  .tag{display:inline-block;font-size:11px;border:1px solid var(--line);border-radius:10px;padding:0 8px;color:var(--dim);margin:0 4px 4px 0}
+  .tag.hit{border-color:var(--acc);color:var(--acc)}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  label{font-size:13px;color:var(--dim)}
+  select,input[type=text],input[type=number],textarea{background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit}
+  textarea{width:100%;min-height:88px;resize:vertical}
+  button.act{background:#238636;border:1px solid #2ea043;color:#fff;border-radius:6px;padding:8px 18px;cursor:pointer;font-size:14px;font-weight:600}
+  button.act:hover{background:#2ea043}
+  button.ghost{background:none;border:1px solid var(--line);color:var(--acc2);border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px}
+  button.ghost:hover{border-color:var(--acc2)}
+  .log{background:#010409;border:1px solid var(--line);border-radius:8px;padding:10px 14px;font:12px/1.8 Consolas,monospace;min-height:60px;max-height:260px;overflow:auto;margin-top:10px;display:none}
+  .log .tg{color:var(--acc2)}.log .ok{color:var(--acc)}
+  .split{display:grid;grid-template-columns:260px 1fr;gap:14px;margin-top:14px}
+  @media(max-width:900px){.split{grid-template-columns:1fr}}
+  .tree{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px;max-height:520px;overflow:auto;font:12.5px/1.9 Consolas,monospace}
+  .tree .dir{color:var(--warn);font-weight:600}
+  .tree .f{color:var(--acc2);cursor:pointer;padding-left:18px;display:block;white-space:nowrap}
+  .tree .f:hover{text-decoration:underline}
+  .tree .f.cur{background:var(--panel2);border-radius:4px}
+  .viewer{background:var(--panel);border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;min-height:520px}
+  .viewer .bar{display:flex;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);font:12px Consolas,monospace;color:var(--dim)}
+  .viewer pre{flex:1;overflow:auto;padding:12px 14px;font:12px/1.62 Consolas,"Courier New",monospace;white-space:pre;color:#c9d1d9}
+  .note{font-size:12.5px;color:var(--dim);margin-top:8px}
+  .hl{color:var(--warn)}
+  code.inline{background:#010409;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font:12px Consolas,monospace}
+  .kbd{white-space:nowrap}
+  .steps li{margin:4px 0}
+  a{color:var(--acc2)}
+</style>
+</head>
+<body>
+<header>
+  <h1>上位机代码工厂 <span class="v">智能体 v1.0</span></h1>
+  <p>拆解《运动控制上位机高级工程师》JD &rarr; 提取 AI 可替代度最高的职责 &rarr; 直接生成可编译运行的 C# 工程与设备驱动。本地运行，零依赖，零 API。</p>
+  <p style="margin-top:2px">
+    <span class="tag hit">职责2 分层架构</span><span class="tag hit">职责3 运动控制卡适配层</span>
+    <span class="tag hit">职责8 Modbus/设备接口</span><span class="tag hit">职责8 SPC 统计</span><span class="tag hit">职责10 编译/单测/文档规范</span>
+    <span class="tag">职责4-7 工艺算法骨架</span><span class="tag">职责9 诊断入口</span>
+  </p>
+</header>
+<nav>
+  <button class="on" data-tab="t1">1 JD 拆解决策台</button>
+  <button data-tab="t2">2 运动控制适配层工厂</button>
+  <button data-tab="t3">3 Modbus 驱动工厂</button>
+  <button data-tab="t4">4 编译验证指南</button>
+</nav>
+<main>
+
+<!-- ============ TAB 1 ============ -->
+<div class="tab on" id="t1">
+  <div class="card">
+    <h2>拆解方法</h2>
+    <p>对 JD 的 11 条职责 + 10 条任职要求，按两维打分：<b>商业价值</b>（该能力在岗位中的稀缺度/成本）与 <b>AI 可替代性</b>（纯文本变换 vs 必须现场硬件）。两维皆高者即智能体切入点。</p>
+  </div>
+  <div class="card">
+    <h2>拆解矩阵（本次 JD）</h2>
+    <table>
+      <tr><th>JD 职责</th><th>价值</th><th>AI 可替代性</th><th>判定与本工具覆盖</th></tr>
+      <tr><td>#3 运动控制卡适配层：统一封装固高/雷赛/正运动/软赢/高川/ACS，"换卡不改业务代码" + 能力差异文档</td><td class="s5">★★★★★</td><td class="s5">★★★★★</td><td><b>首选，Tab2 已实现</b>。读手册翻译 SDK = 纯文本变换，AI 最强项；又是 5 年经验工程师的护城河</td></tr>
+      <tr><td>#8 设备通信接口：Modbus TCP/RTU、串口、TCP/IP、温控器/功率计/MES、SPC 统计报表</td><td class="s4">★★★★</td><td class="s5">★★★★★</td><td><b>次选，Tab3 已实现</b>。标准协议 + 点表驱动的代码生成，稳定可复现</td></tr>
+      <tr><td>#2 架构：分层结构/模块边界/设备抽象层/流程调度引擎/数据追溯</td><td class="s4">★★★★</td><td class="s4">★★★★</td><td><b>已内建</b>。生成物即分层架构（Core/Adapters/Virtual/samples）</td></tr>
+      <tr><td>#10 工程规范：单测/评审/发布回滚/接口文档</td><td class="s3">★★★</td><td class="s5">★★★★★</td><td><b>已内建</b>。虚拟控制器可跑单测；核对清单/差异矩阵即接口文档</td></tr>
+      <tr><td>#4 多轴联动：插补/力控压合/S 曲线/微米定位</td><td class="s4">★★★★</td><td class="s2">★★</td><td>算法与调用结构已生成（接口含插补/力控），精调需真机</td></tr>
+      <tr><td>#5/#6/#7 工艺：共晶贴片/点胶/耦合</td><td class="s4">★★★★</td><td class="s3">★★★</td><td>示例已含点胶路径+出胶时序+SPC；寻光等算法可在此基座上扩展</td></tr>
+      <tr><td>#9 疑难攻关：偶发偏差/丢包/良率波动</td><td class="s5">★★★★★</td><td class="s2">★★</td><td>统一 MotionResult/状态位为诊断数据源；全自动化暂不可替代</td></tr>
+      <tr><td>#1 全流程交付 / #11 带教</td><td class="s5">★★★★★</td><td class="s1">★</td><td>需现场/人际，本工具仅提供知识沉淀（文档）</td></tr>
+    </table>
+    <p class="note">结论：<span class="hl">#3 + #8 + #2 是「价值 × AI 可替代性」最优交集</span> —— 本智能体可靠替代的是<b>分层架构与样板代码</b>（可编译验证）；SDK 签名核对仍需工程师以厂商手册为准（外部证据，AI 生成不构成证据）。</p>
+  </div>
+  <div class="card">
+    <h2>实测结果（本机复验过的部分，与未验证部分分开写）</h2>
+    <ul class="steps">
+      <li><b>编译级验证（csc）</b>：固高 / 雷赛 / 正运动 / 全品牌套件（含软赢+高川骨架）= 0 错误 0 警告。早期单独生成的软赢/高川骨架套件带 2 条 CS0162，已随修复版重新生成。</li>
+      <li><b>运行级验证</b>：仅 <b>VirtualController 仿真路径</b>被真正执行过（回零 &rarr; 插补走胶/IO 时序 &rarr; 圆弧 &rarr; DI 互锁 &rarr; 力控 &rarr; SPC/Cpk，PASS，退出码 0）。<span class="hl">各品牌适配器的 P/Invoke 路径只做了编译级验证，从未运行——须真机。</span></li>
+      <li><b>外部证据</b>：Modbus CRC16 用标准测试向量 0x4B37 校验通过（向量独立于生成逻辑）。适配器 SDK 签名<b>已接入官方真值核对</b>（PE 导出表 + 官方 C# 绑定 / C 头文件，见 Tab4 诚实边界）。</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============ TAB 2 ============ -->
+<div class="tab" id="t2">
+  <div class="card">
+    <h2>Step 1 - 描述需求（自然语言，自动解析填表）</h2>
+    <textarea id="nlText" placeholder="例：我们设备要用雷赛的控制卡，4轴，做点胶工艺，需要圆弧插补和出胶时序……&#10;（也可直接在下方手动配置）"></textarea>
+    <div class="row" style="margin-top:8px">
+      <button class="ghost" onclick="doParse()">解析需求</button>
+      <span class="note" id="parseMsg"></span>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Step 2 - 配置</h2>
+    <div class="row">
+      <label>品牌 <select id="cfgBrand"></select></label>
+      <label>轴数 <input type="number" id="cfgAxes" value="3" min="1" max="8" style="width:64px"></label>
+      <label>工艺 <select id="cfgProcess"></select></label>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="cfgAll" checked> 工程内包含全部品牌适配器（<b>ACS 除外</b>——编译需官方 ACS.SPiiPlusNET.dll，要 ACS 请单独生成专用套件）</label>
+    </div>
+    <div class="row">
+      <button class="act" onclick="doGenerate()">启动智能体 · 生成工程</button>
+    </div>
+    <div class="log" id="genLog"></div>
+  </div>
+  <div class="card" id="outCard" style="display:none">
+    <h2>Step 3 - 产出（<span id="statFiles"></span> 个文件 · <span id="statLines"></span> 行 C#）</h2>
+    <div class="row">
+      <button class="ghost" onclick="downloadZip()">下载完整工程 ZIP</button>
+      <button class="ghost" onclick="copyCur()">复制当前文件</button>
+      <button class="ghost" onclick="downloadCur()">下载当前文件</button>
+      <span class="note">换卡演示：打开 <code class="inline">samples/Program.cs</code>，只改 <code class="inline">CREATE_BRAND</code> 一行（限已生成适配器的品牌；<code class="inline">Brand.Acs</code> 需专用套件 + 厂商 DLL）。</span>
+    </div>
+    <div class="split">
+      <div class="tree" id="fileTree"></div>
+      <div class="viewer">
+        <div class="bar"><span id="curPath">（选择左侧文件查看）</span></div>
+        <pre id="codeView"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TAB 3 ============ -->
+<div class="tab" id="t3">
+  <div class="card">
+    <h2>Step 1 - 设备信息与点表（CSV：地址,名称,类型,访问,功能码,缩放,单位,描述）</h2>
+    <div class="row">
+      <label>设备名(英文) <input type="text" id="mbName" value="temp_controller" style="width:160px"></label>
+      <label>设备标题 <input type="text" id="mbTitle" value="温控器" style="width:160px"></label>
+      <label>IP <input type="text" id="mbIp" value="192.168.0.50" style="width:130px"></label>
+      <label>从站号 <input type="number" id="mbSlave" value="1" min="1" max="255" style="width:64px"></label>
+    </div>
+    <textarea id="mbCsv" rows="9"># 地址,名称,类型,访问,功能码,缩放,单位,描述
+100,PV,f32,RO,04,0.1,C,当前温度(过程值)
+200,SV,f32,RW,03,0.1,C,设定温度
+210,RUN,u16,RW,03,1,,运行/停止
+220,ALARM,u16,RO,04,1,,报警码
+230,HEAT_POWER,u16,RO,04,0.1,%,加热功率百分比
+# 类型: u16/i16/u32/i32/f32  访问: RO/RW  功能码: 03保持/04输入</textarea>
+    <div class="row" style="margin-top:10px">
+      <button class="act" onclick="doModbus()">生成类型化驱动</button>
+      <span class="note" id="mbMsg"></span>
+    </div>
+  </div>
+  <div class="card" id="mbOut" style="display:none">
+    <h2>Step 2 - 产出（<span id="mbStat"></span>）</h2>
+    <div class="row">
+      <button class="ghost" onclick="downloadZipMb()">下载 ZIP</button>
+      <button class="ghost" onclick="copyCur()">复制当前文件</button>
+      <button class="ghost" onclick="downloadCur()">下载当前文件</button>
+    </div>
+    <div class="split">
+      <div class="tree" id="mbTree"></div>
+      <div class="viewer">
+        <div class="bar"><span id="curPath2">（选择左侧文件查看）</span></div>
+        <pre id="codeView2"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TAB 4 ============ -->
+<div class="tab" id="t4">
+  <div class="card">
+    <h2>验证产出（不装任何东西，60 秒）</h2>
+    <ol class="steps">
+      <li>Tab2/Tab3 点生成，下载 ZIP 并解压</li>
+      <li>双击 <code class="inline kbd">build\build_net48.bat</code> —— 使用 Windows 自带 .NET Framework 编译器（csc），编译并运行 Demo</li>
+      <li>看到 <code class="inline">RESULT: PASS</code> 即工程可用（虚拟控制器仿真，无需硬件）</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h2>上真机流程（工程师操作，工时按实际手册篇幅实估）</h2>
+    <ol class="steps">
+      <li>打开 <code class="inline">docs/ApiChecklist.md</code>（注意头部"同源声明"），<b>以厂商官方手册为唯一依据</b>逐条比对 P/Invoke 签名（函数名/参数类型与方向/轴号基数/IO 极性）</li>
+      <li>用厂商 Demo 软件手动验证：使能 &rarr; 回零 &rarr; 低速点位 &rarr; 停止</li>
+      <li>改 <code class="inline">Program.cs</code> 的 <code class="inline">CREATE_BRAND</code> 为真卡品牌，低速（&lt;10mm/s）运行，核对方向与当量</li>
+      <li>验证急停与限位，再进入工艺联调；进阶能力（飞拍/位置比较/力控 AO）见 <code class="inline">docs/CapabilityMatrix.md</code></li>
+    </ol>
+  </div>
+  <div class="card">
+    <h2>迁移到现代框架（可选）</h2>
+    <p>源码 C#5 兼容。把 <code class="inline">build/GlueDemo.csproj</code> 放到工程根目录，安装 .NET SDK 后 <code class="inline">dotnet build</code> 即可迁移 net6/8；WPF/WinForm 业务界面直接引用 Core 抽象层。</p>
+  </div>
+  <div class="card">
+    <h2>诚实边界（KB 级别制 + 证据分级）</h2>
+    <ul class="steps">
+      <li><b>A 级</b> 虚拟控制器：100% 自研，编译+运行均已验证（跟随误差/噪声/固定种子仿真）</li>
+      <li><b>B 级</b> 固高/雷赛/正运动/ACS：架构/线程/单位换算/错误映射为工程级成品，<b>仅编译级验证</b>。<span class="hl">SDK 函数名与参数表已按官方真值（PE 导出表 + 官方 C# 绑定 / C 头文件）逐条核对，并可用核对工具回归；仍带 [核对] 标记的项（单位/量程/IO 极性/回零模式号）须按厂商手册确认。</span>ACS 另需厂商 DLL，不在全品牌套件内</li>
+      <li><b>C 级</b> 软赢/高川：骨架 + TODO 清单（获取手册后按同构模式补全）</li>
+      <li><b>核对清单的循环性</b>：ApiChecklist.md 由同一知识库生成——它能告诉你"去哪核对"，不能发现"生成错了"。签名的唯一有效依据是厂商官方手册/头文件，比对工时按手册篇幅实估，本工具不做工时承诺</li>
+    </ul>
+    <p class="note">真实定位：AI 消灭的是<b>架构与样板代码</b>的工时（这部分可直接编译验证）；SDK 签名的正确性属于外部证据问题，AI 生成不构成证据，只能靠人工对照手册。</p>
+  </div>
+</div>
+
+</main>
+<script>
+/*__GEN_SCRIPTS__*/
+</script>
+<script>
+// ---------------- UI 逻辑 ----------------
+var G = window.MCGen;
+(function(){
+  // tabs
+  var nav = document.querySelectorAll('nav button');
+  for (var i=0;i<nav.length;i++) nav[i].onclick = function(){
+    for (var j=0;j<nav.length;j++){nav[j].classList.remove('on');}
+    this.classList.add('on');
+    var tabs=document.querySelectorAll('.tab');
+    for (var k=0;k<tabs.length;k++) tabs[k].classList.remove('on');
+    document.getElementById(this.getAttribute('data-tab')).classList.add('on');
+  };
+  // brand & process selects
+  var sel=document.getElementById('cfgBrand');
+  for (var b=0;b<G.BRANDS.length;b++){
+    var o=document.createElement('option');o.value=G.BRANDS[b].id;
+    o.textContent=G.BRANDS[b].label+'  [KB-'+G.BRANDS[b].kb+']';
+    sel.appendChild(o);
+  }
+  var sp=document.getElementById('cfgProcess');
+  for (var p=0;p<G.PROCESSES.length;p++){
+    var o2=document.createElement('option');o2.value=G.PROCESSES[p].id;
+    o2.textContent=G.PROCESSES[p].label;sp.appendChild(o2);
+  }
+})();
+
+function doParse(){
+  var t=document.getElementById('nlText').value;
+  var cfg=G.parseRequest(t);
+  document.getElementById('cfgBrand').value=cfg.brandId;
+  document.getElementById('cfgAxes').value=cfg.axisCount;
+  document.getElementById('cfgProcess').value=cfg.process;
+  var kb=G.BRANDS.filter(function(x){return x.id===cfg.brandId;})[0];
+  document.getElementById('parseMsg').innerHTML='已解析 &rarr; 品牌: '+kb.label+'（KB-'+kb.kb+'）· 轴数: '+cfg.axisCount+' · 工艺: '+cfg.process;
+}
+
+var curFiles=[], curIdx=-1;
+
+function doGenerate(){
+  var cfg={
+    brandId:document.getElementById('cfgBrand').value,
+    axisCount:parseInt(document.getElementById('cfgAxes').value,10)||3,
+    process:document.getElementById('cfgProcess').value,
+    includeAllBrands:document.getElementById('cfgAll').checked
+  };
+  var res=G.generate(cfg);
+  curFiles=res.files;curIdx=-1;
+  var log=document.getElementById('genLog');log.style.display='block';log.innerHTML='';
+  var steps=res.steps;
+  var i=0;
+  (function next(){
+    if(i>=steps.length)return;
+    var s=steps[i++];
+    var d=document.createElement('div');
+    d.innerHTML='<span class="tg">['+s.tag+']</span> '+s.msg;
+    log.appendChild(d);log.scrollTop=log.scrollHeight;
+    setTimeout(next,120);
+  })();
+  document.getElementById('outCard').style.display='block';
+  document.getElementById('statFiles').textContent=res.stats.files;
+  document.getElementById('statLines').textContent=res.stats.lines;
+  window._lastZip=res.zip;window._lastZipName='MotionControlKit_'+cfg.brandId+'.zip';
+  renderTree('fileTree',res.files,'curPath','codeView');
+  document.getElementById('outCard').scrollIntoView({behavior:'smooth'});
+}
+
+function renderTree(treeId,files,pathId,viewId){
+  var tree=document.getElementById(treeId);tree.innerHTML='';
+  var dirs={};
+  for(var i=0;i<files.length;i++){
+    var p=files[i].path,ix=p.lastIndexOf('/');
+    var dir=ix<0?'/':p.substring(0,ix);
+    if(!dirs[dir]){dirs[dir]=document.createElement('div');}
+  }
+  var dirNames=Object.keys(dirs).sort();
+  for(var d=0;d<dirNames.length;d++){
+    var hd=document.createElement('div');hd.className='dir';hd.textContent=(dirNames[d]==='/'?'(root)':dirNames[d]+'/');
+    tree.appendChild(hd);
+    for(var f=0;f<files.length;f++){
+      var pp=files[f].path,ixx=pp.lastIndexOf('/');
+      var dd=ixx<0?'/':pp.substring(0,ixx);
+      if(dd===dirNames[d]){
+        (function(idx){
+          var el=document.createElement('span');el.className='f';
+          el.textContent=pp.substring(ixx+1);
+          el.onclick=function(){
+            var all=document.querySelectorAll('#'+treeId+' .f');
+            for(var q=0;q<all.length;q++)all[q].classList.remove('cur');
+            el.classList.add('cur');
+            curIdx=idx;
+            document.getElementById(pathId).textContent=pp;
+            document.getElementById(viewId).textContent=files[idx].content;
+          };
+          tree.appendChild(el);
+        })(f);
+      }
+    }
+  }
+}
+
+function esc(s){return s;}
+
+function downloadZip(){
+  saveBlob(new Blob([window._lastZip],{type:'application/zip'}),window._lastZipName);
+}
+function downloadZipMb(){
+  saveBlob(new Blob([window._mbZip],{type:'application/zip'}),'ModbusDeviceKit_'+document.getElementById('mbName').value+'.zip');
+}
+function copyCur(){
+  if(curIdx<0){alert('请先选择文件');return;}
+  var txt=curFiles[curIdx].content;
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){toast('已复制');});}
+  else{
+    var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');toast('已复制');}catch(e){alert('复制失败，请手动选择');}
+    document.body.removeChild(ta);
+  }
+}
+function downloadCur(){
+  if(curIdx<0){alert('请先选择文件');return;}
+  var f=curFiles[curIdx];
+  saveBlob(new Blob([f.content],{type:'text/plain'}),f.path.replace(/\//g,'_'));
+}
+function saveBlob(blob,name){
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},300);
+}
+function toast(msg){
+  var t=document.createElement('div');
+  t.textContent=msg;t.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#238636;color:#fff;padding:8px 20px;border-radius:6px;z-index:99';
+  document.body.appendChild(t);setTimeout(function(){t.remove();},1500);
+}
+
+// ---------------- Modbus ----------------
+function doModbus(){
+  var dev={
+    name:document.getElementById('mbName').value||'device',
+    title:document.getElementById('mbTitle').value||'设备',
+    ip:document.getElementById('mbIp').value,
+    port:502,
+    slaveId:parseInt(document.getElementById('mbSlave').value,10)||1
+  };
+  var csv=document.getElementById('mbCsv').value;
+  var res=G.modbus.generate(dev,csv,{includeRtu:true});
+  if(!res.ok){
+    document.getElementById('mbMsg').innerHTML='<span style="color:#f85149">'+res.errors.join('；')+'</span>';
+    return;
+  }
+  document.getElementById('mbMsg').innerHTML='解析 '+res.points.length+' 个点位，全部有效';
+  curFiles=res.files;curIdx=-1;window._mbZip=res.zip;
+  document.getElementById('mbOut').style.display='block';
+  document.getElementById('mbStat').textContent=res.files.length+' 个文件 · '+res.points.length+' 点位';
+  renderTree('mbTree',res.files,'curPath2','codeView2');
+  document.getElementById('mbOut').scrollIntoView({behavior:'smooth'});
+}
+</script>
+</body>
+</html>

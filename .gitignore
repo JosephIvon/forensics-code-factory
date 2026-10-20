@@ -1,0 +1,10 @@
+# 临时/工具产物
+__pycache__/
+*.py[cod]
+node_modules/
+.DS_Store
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
