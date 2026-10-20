@@ -1,6 +1,6 @@
 # P/Invoke 签名核对清单（上真机前必做）
 
-> 生成时间: 2026-10-20 08:04:23
+> 生成时间: 2026-10-20 09:11:42
 > **同源声明（重要）**: 本清单由生成器内置知识库派生，与适配器代码同源。
 > 它只能索引"去哪里核对"，不能证明签名正确——签名若有错，错误会被原样列进清单。
 > 唯一有效依据是厂商官方手册/头文件（外部信息源），须逐条比对（含函数名、参数个数/类型/方向、轴号基数、IO 极性）。
@@ -44,7 +44,7 @@
 | `GT_SetPos/GT_SetVel + GT_Update(mask)` | 设目标/速度并触发 | 官方原型 GT_SetPos(short profile,int pos) / GT_SetVel(short profile,double vel) / GT_Update(int mask)（gts.csv:439/459/470）；Update掩码bit=轴号-1 | （待填） |
 | `GT_PrfJog + GT_SetJogPrm` | Jog | 官方原型 GT_SetJogPrm(short profile,ref TJogPrm pPrm)（gts.csv:422 / gts_hdr.csv:470）；TJogPrm 官方只有 acc/dec/smooth 三个字段，Jog 速度必须走 GT_SetVel（速度符号即方向） | （待填） |
 | `GT_Stop(mask, option)` | 停止 | 官方原型 GT_Stop(int mask,int option)（gts.csv:465 / gts_hdr.csv:527）；option 0=减速 1=急停 | （待填） |
-| `GT_GetStandardHomePrm + GT_ExecuteStandardHome` | 回零 | 官方原型 GT_GetStandardHomePrm(short axis,out TStandardHomePrm) / GT_ExecuteStandardHome(short axis,ref TStandardHomePrm)（gts.csv:241/119 / gts_hdr.csv:264/128）；mode 取 HOME_MODE_LIMIT=10 / HOME_MODE_HOME=20 / HOME_MODE_HOME_INDEX=22 / HOME_MODE_INDEX=30（gts_hdr_macros.csv:163-169） | （待填） |
+| `GT_GetStandardHomePrm + GT_ExecuteStandardHome` | 回零 | 官方原型 GT_GetStandardHomePrm(short axis,out TStandardHomePrm) / GT_ExecuteStandardHome(short axis,ref TStandardHomePrm)（gts.csv:241/119 / gts_hdr.csv:264/128）；官方 mode 宏全表在 gts_hdr_macros.csv:163-171：HOME_MODE_LIMIT=10 / HOME_MODE_LIMIT_HOME=11 / HOME_MODE_LIMIT_INDEX=12 / HOME_MODE_LIMIT_HOME_INDEX=13 / HOME_MODE_HOME=20 / HOME_MODE_HOME_INDEX=22 / HOME_MODE_INDEX=30 / HOME_MODE_FORCED_HOME=40 / HOME_MODE_FORCED_HOME_INDEX=41。本套件只映射其中 4 个（HomeMode 枚举只有 4 值）—— 需限位+原点+索引组合回零（11/12/13）或强制回零（40/41）时，官方有这个 mode，本套件没暴露，要自己扩 HomeMode 枚举再加 case | （待填） |
 | `GT_GetSts(axis,...)` | 轴状态 | 官方原型 GT_GetSts(short axis,out int pSts,short count,out uint pClock)（gts.csv:244 / gts_hdr.csv:267）；使能/运动/报警/限位位定义按手册bit表核对 | （待填） |
 | `GT_GetPrfPos/GT_GetEncPos` | 指令/反馈位置 | 官方原型 GT_GetPrfPos(short profile,out double pValue,short count,out uint pClock) / GT_GetEncPos(short encoder,...)（gts.csv:230/186）；单位脉冲 | （待填） |
 | `GT_GetDi(diType) / GT_SetDoBit(doType,index,value)` | IO | 官方原型 GT_GetDi(short diType,out int pValue) / GT_SetDoBit(short doType,short doIndex,short value)（gts.csv:180/396）；官方宏表里有候选值 MC_GPI=4 / MC_GPO=12（gts_hdr_macros.csv:17,22），但真值未标注其与 diType/doType 的对应关系，故代码保留[核对]标记取值 1，待手册确认 | （待填） |

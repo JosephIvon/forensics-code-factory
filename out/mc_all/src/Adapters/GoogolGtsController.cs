@@ -1,6 +1,6 @@
 // =====================================================================
 //  固高 GTS/GTN 系列 适配器（gts.dll）
-//  生成工具: 上位机代码工厂 v1.0 | 2026-10-20 08:04:23
+//  生成工具: 上位机代码工厂 v1.0 | 2026-10-20 09:11:42
 //  KB级别: B —— 核心API已映射(Open/使能/回零/点位/IO/位置)。函数名、参数表与结构体字段顺序已按官方C#绑定/C头文件逐条核对；回零改用官方标准回零接口(GT_GetStandardHomePrm/GT_ExecuteStandardHome)。【重要】本套件的 gts.dll 绑定是【单卡库】口径(首参是通道号)；固高 SDK 的多卡库 DLL 同样叫 gts.dll、导出名完全相同，但每个 API 多一个 cardNum 首参——混用会让参数整体错位。插多张卡时必须改用多卡库签名，或用 GT_SetCardNo 逐卡切换。
 //  上真机前按 docs/ApiChecklist.md 核对签名（标注 [核对] 处）
 // =====================================================================
@@ -526,8 +526,11 @@ namespace MotionControl.Adapters.Googol
         }
 
 
-        // [真值] HOME_MODE_* 宏值取自官方头文件宏表 gts_hdr_macros.csv:163-169
-        //   HOME_MODE_LIMIT=10 / HOME_MODE_HOME=20 / HOME_MODE_HOME_INDEX=22 / HOME_MODE_INDEX=30
+        // [真值] HOME_MODE_* 宏值取自官方头文件宏表 gts_hdr_macros.csv:163-171（全表 9 个 mode）
+        //   HOME_MODE_LIMIT=10 / HOME_MODE_LIMIT_HOME=11 / HOME_MODE_LIMIT_INDEX=12 /
+        //   HOME_MODE_LIMIT_HOME_INDEX=13 / HOME_MODE_HOME=20 / HOME_MODE_HOME_INDEX=22 /
+        //   HOME_MODE_INDEX=30 / HOME_MODE_FORCED_HOME=40 / HOME_MODE_FORCED_HOME_INDEX=41
+        //   本套件只映射 4 个（HomeMode 枚举只有 4 值）；11/12/13 与 40/41 未暴露。
         private static short MapHomeModeToGtsStandard(HomeMode m)
         {
             switch (m)
