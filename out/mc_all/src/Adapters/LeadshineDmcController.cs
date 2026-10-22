@@ -1,6 +1,6 @@
 // =====================================================================
 //  雷赛 DMC/EMC 系列 (LTDMC) 适配器（LTDMC.dll）
-//  生成工具: 上位机代码工厂 v1.0 | 2026-10-22 12:00:23
+//  生成工具: 上位机代码工厂 v1.0 | 2026-10-22 16:11:50
 //  KB级别: B —— 核心API已映射(board/点位/停止/位置/IO/模拟量)。函数名与参数表已按官方C#绑定/C头文件核对；官方无软件使能接口(脉冲卡硬线使能)，使能项标注未实现。
 //  上真机前按 docs/ApiChecklist.md 核对签名（标注 [核对] 处）
 // =====================================================================
@@ -51,7 +51,7 @@ namespace MotionControl.Adapters.Leadshine
         //   本套件 P/Invoke 16 条：知识库钉扎 13 / 未收录(显式降级) 3
         //   核对进度（钉扎条目）：manual 0 / hardware 0 / auto 0 / none 13
         //   ⚠ 未核对 13 条：dmc_board_init, dmc_board_close, dmc_pmove, dmc_set_profile, dmc_stop, dmc_check_done, dmc_get_position, dmc_get_encoder, dmc_vmove, dmc_home_move, dmc_set_homemode, dmc_read_inbit, dmc_write_outbit —— 已标 TODO，不许当事实用
-        //   复核：mcopilot 仓库跑 scripts/annotate_provenance.py --check；重新生成本套件即自动继承最新口径
+        //   复核：mcopilot 仓库跑 scripts/verify_traekb_citations.py；重新生成本套件即自动继承最新口径
 
         // [真值] 函数名/参数表取自 leisai.csv(官方C#绑定) 与 leisai_cpp.csv(官方C头文件)，并已对 dll_exports.csv(PE导出表) 校验
         // TODO[需核对厂商手册] dmc_board_init —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件

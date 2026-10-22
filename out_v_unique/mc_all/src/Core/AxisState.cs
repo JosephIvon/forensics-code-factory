@@ -14,10 +14,6 @@ namespace MotionControl.Core
         Homed = 32,
         LimitNeg = 64,
         LimitPos = 128,
-        Emergency = 256,
-
-        /// <summary>状态位映射尚未经真机标定：本返回值用的是启发式默认位，不可作为判据。
-        /// 厂商适配器在首板标定前会置上此位，避免业务层把「猜的位」当成真值用。</summary>
-        Uncalibrated = 512
+        Emergency = 256
     }
 }

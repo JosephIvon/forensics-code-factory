@@ -1,6 +1,6 @@
-# MotionControlKit - undefined 上位机工程包
+# MotionControlKit - 全品牌套件（固高/雷赛/正运动 + 软赢/高川骨架） 上位机工程包
 
-> 生成工具: **上位机代码工厂 v1.0** | 时间: 2026-10-20 00:17:00 | 轴数: 4 | 工艺: 通用
+> 生成工具: **上位机代码工厂 v1.0** | 时间: 2026-10-22 16:11:50 | 轴数: 4 | 工艺: dispensing
 
 ## 这是什么
 
@@ -8,7 +8,7 @@
 
 ```
 src/Core/       抽象层: IMotionController 接口/配置/结果对象/工厂  <- 业务唯一依赖
-src/Adapters/   适配层: undefined (P/Invoke 封装, 单位换算, 线程锁)
+src/Adapters/   适配层: 全品牌套件（固高/雷赛/正运动 + 软赢/高川骨架） (P/Invoke 封装, 单位换算, 线程锁)
 src/Virtual/    虚拟控制器: 无硬件全流程仿真/单元测试
 samples/        工艺流程示例(换卡只改一行)
 docs/           能力差异矩阵 + API 核对清单

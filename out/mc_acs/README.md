@@ -1,6 +1,6 @@
 # MotionControlKit - ACS SPiiPlus (SPiiPlusNET) 上位机工程包
 
-> 生成工具: **上位机代码工厂 v1.0** | 时间: 2026-10-20 11:35:37 | 轴数: 4 | 工艺: dispensing
+> 生成工具: **上位机代码工厂 v1.0** | 时间: 2026-10-22 15:51:27 | 轴数: 4 | 工艺: dispensing
 
 ## 这是什么
 

@@ -1,6 +1,6 @@
 // =====================================================================
 //  固高 GTS/GTN 系列 适配器（gts.dll）
-//  生成工具: 上位机代码工厂 v1.0 | 2026-10-22 12:10:22
+//  生成工具: 上位机代码工厂 v1.0 | 2026-10-22 15:51:27
 //  KB级别: B —— 核心API已映射(Open/使能/回零/点位/IO/位置)。函数名、参数表与结构体字段顺序已按官方C#绑定/C头文件逐条核对；回零改用官方标准回零接口(GT_GetStandardHomePrm/GT_ExecuteStandardHome)。【重要】本套件的 gts.dll 绑定是【单卡库】口径(首参是通道号)；固高 SDK 的多卡库 DLL 同样叫 gts.dll、导出名完全相同，但每个 API 多一个 cardNum 首参——混用会让参数整体错位。插多张卡时必须改用多卡库签名，或用 GT_SetCardNo 逐卡切换。
 //  上真机前按 docs/ApiChecklist.md 核对签名（标注 [核对] 处）
 // =====================================================================
@@ -51,7 +51,7 @@ namespace MotionControl.Adapters.Googol
         //   本套件 P/Invoke 22 条：知识库钉扎 19 / 未收录(显式降级) 3
         //   核对进度（钉扎条目）：manual 0 / hardware 0 / auto 0 / none 19
         //   ⚠ 未核对 19 条：GT_Open, GT_Close, GT_Reset, GT_LoadConfig, GT_ClrSts, GT_AxisOn, GT_AxisOff, GT_Stop, GT_SetPos, GT_SetVel, GT_Update, GT_PrfTrap, GT_SetTrapPrm, GT_PrfJog, GT_SetJogPrm, GT_GetSts, GT_GetPrfPos, GT_GetDi, GT_SetDoBit —— 已标 TODO，不许当事实用
-        //   复核：mcopilot 仓库跑 scripts/annotate_provenance.py --check；重新生成本套件即自动继承最新口径
+        //   复核：mcopilot 仓库跑 scripts/verify_traekb_citations.py；重新生成本套件即自动继承最新口径
 
         // [真值] 函数名/参数表取自 gts.csv(官方C#绑定) 与 gts_hdr.csv(官方C头文件)，并已对 dll_exports.csv(PE导出表) 校验
         // [变体口径·必读] 本套件按【单卡库】(64bit_single_card) 签名绑定：首参是通道号，无 cardNum。

@@ -1,7 +1,7 @@
 // =====================================================================
 //  雷赛 DMC/EMC 系列 (LTDMC) 适配器（LTDMC.dll）
-//  生成工具: 上位机代码工厂 v1.0 | 2026-10-20 00:15:59
-//  KB级别: B —— 核心API已映射(board/点位/停止/位置/IO)，使能与回零依赖型号(脉冲卡/总线卡)，[核对]项较多。
+//  生成工具: 上位机代码工厂 v1.0 | 2026-10-22 15:51:27
+//  KB级别: B —— 核心API已映射(board/点位/停止/位置/IO/模拟量)。函数名与参数表已按官方C#绑定/C头文件核对；官方无软件使能接口(脉冲卡硬线使能)，使能项标注未实现。
 //  上真机前按 docs/ApiChecklist.md 核对签名（标注 [核对] 处）
 // =====================================================================
 using System;
@@ -45,41 +45,79 @@ namespace MotionControl.Adapters.Leadshine
         public bool IsOpen { get { return _open; } }
 
         #region 厂商 API 导入（[核对] = 签名需按手册确认）
+        // ── 真值链（每条 P/Invoke 上方：[ 源 | 核对 | 提取 ]）──
+        //   数据源：mcopilot knowledge/sdks/dmc.json（生成时实时读取，非复制）
+        //   源=verified 这条结论从哪来 ｜ 核对=check 验到哪一步 ｜ 提取=extraction 签名对≠调用对时是否需人签字
+        //   本套件 P/Invoke 16 条：知识库钉扎 13 / 未收录(显式降级) 3
+        //   核对进度（钉扎条目）：manual 0 / hardware 0 / auto 0 / none 13
+        //   ⚠ 未核对 13 条：dmc_board_init, dmc_board_close, dmc_pmove, dmc_set_profile, dmc_stop, dmc_check_done, dmc_get_position, dmc_get_encoder, dmc_vmove, dmc_home_move, dmc_set_homemode, dmc_read_inbit, dmc_write_outbit —— 已标 TODO，不许当事实用
+        //   复核：mcopilot 仓库跑 scripts/verify_traekb_citations.py；重新生成本套件即自动继承最新口径
 
+        // [真值] 函数名/参数表取自 leisai.csv(官方C#绑定) 与 leisai_cpp.csv(官方C头文件)，并已对 dll_exports.csv(PE导出表) 校验
+        // TODO[需核对厂商手册] dmc_board_init —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_board_init();
+        // TODO[需核对厂商手册] dmc_board_close —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_board_close();
+        // TODO[需核对厂商手册] dmc_pmove —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
-        private static extern short dmc_pmove(ushort card, ushort axis, long pos, ushort mode);
+        private static extern short dmc_pmove(ushort card, ushort axis, int dist, ushort posi_mode);
+        // TODO[需核对厂商手册] dmc_set_profile —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
-        private static extern short dmc_set_profile(ushort card, ushort axis, double startv, double maxv, double tacc, double tdec, double stopv);
+        private static extern short dmc_set_profile(ushort card, ushort axis, double minVel, double maxVel, double tacc, double tdec, double stopVel);
+        // TODO[需核对厂商手册] dmc_stop —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_stop(ushort card, ushort axis, ushort stopMode);
+        // TODO[需核对厂商手册] dmc_check_done —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_check_done(ushort card, ushort axis);
+        // TODO[需核对厂商手册] dmc_get_position —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
-        private static extern long dmc_get_position(ushort card, ushort axis);
+        private static extern int dmc_get_position(ushort card, ushort axis);
+        // TODO[需核对厂商手册] dmc_get_encoder —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
-        private static extern long dmc_get_encoder(ushort card, ushort axis);
+        private static extern int dmc_get_encoder(ushort card, ushort axis);
+        // TODO[需核对厂商手册] dmc_vmove —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-manual | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_vmove(ushort card, ushort axis, ushort dir);
+        // [ 源 未标注 | 核对 none | 提取 judgment ]  mcopilot 知识库未收录此函数
+        // TODO[需核对厂商手册] dmc_change_speed：签名未经外部真值钉扎 —— 按官方 C# 绑定逐字核对后再用
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
-        private static extern short dmc_change_speed(ushort card, ushort axis, double newVel);
+        private static extern short dmc_change_speed(ushort card, ushort axis, double currVel, double taccdec);
+        // TODO[需核对厂商手册] dmc_home_move —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_home_move(ushort card, ushort axis);
+        // TODO[需核对厂商手册] dmc_set_homemode —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-manual | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
-        private static extern short dmc_set_homemode(ushort card, ushort axis, ushort mode, ushort velMode, ushort originDir, ushort ezCount, double lowVel, double highVel);
+        private static extern short dmc_set_homemode(ushort card, ushort axis, ushort homeDir, double vel, ushort mode, ushort ezCount);
+        // TODO[需核对厂商手册] dmc_read_inbit —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_read_inbit(ushort card, ushort bitno);
+        // TODO[需核对厂商手册] dmc_write_outbit —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
-        private static extern short dmc_write_outbit(ushort card, ushort bitno, ushort onoff);
+        private static extern short dmc_write_outbit(ushort card, ushort bitno, ushort onOff);
+        // [ 源 未标注 | 核对 none | 提取 judgment ]  mcopilot 知识库未收录此函数
+        // TODO[需核对厂商手册] dmc_get_ad_input：签名未经外部真值钉扎 —— 按官方 C# 绑定逐字核对后再用
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
-        private static extern short dmc_read_ad(ushort card, ushort ch);
+        private static extern short dmc_get_ad_input(ushort card, ushort channel, ref double vout);
+        // [ 源 未标注 | 核对 none | 提取 judgment ]  mcopilot 知识库未收录此函数
+        // TODO[需核对厂商手册] dmc_set_da_output：签名未经外部真值钉扎 —— 按官方 C# 绑定逐字核对后再用
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
-        private static extern short dmc_write_da(ushort card, ushort ch, ushort value);
-        [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
-        private static extern short dmc_set_servo(ushort card, ushort axis, ushort onoff);
+        private static extern short dmc_set_da_output(ushort card, ushort channel, double vout);
         #endregion
 
         public MotionResult Open(ControllerConnectInfo info)
@@ -134,10 +172,9 @@ namespace MotionControl.Adapters.Leadshine
                 if (!_open) return MotionResult.Fail(-1, "not open");
                 CheckRange(axis);
 
-                // [核对] 脉冲卡(DMC系列)多为硬线使能，无软件使能；总线卡(EMC)用 dmc_set_servo
-                ushort sv = on ? (ushort)1 : (ushort)0;
-                dmc_set_servo(Card, (ushort)axis, sv);
-                return MotionResult.Success("set_servo " + sv + " (脉冲卡请检查硬线使能)");
+                // [未实现] 官方 C# 绑定/C 头文件/PE 导出表里都没有 dmc_set_servo（或任何软件使能声明），该臆造声明已删除。
+                //          雷赛脉冲卡(DMC系列)为硬线使能；总线卡(EMC)使能接口须按型号手册确认后再接入。
+                return MotionResult.Fail(-300, "[未实现] 雷赛软件使能: 官方无 dmc_set_servo 等价声明(脉冲卡为硬线使能)");
             }
         }
 
@@ -196,19 +233,22 @@ namespace MotionControl.Adapters.Leadshine
                 if (!_open) return MotionResult.Fail(-1, "not open");
                 CheckRange(axis); _homed[axis] = false; _homing[axis] = true; _homeStartT[axis] = Environment.TickCount;
 
-                // [核对] 回零模式/方向/EZ计数按型号手册核对
+                // [真值] 官方原型 dmc_set_homemode(UInt16 CardNo,UInt16 axis,UInt16 home_dir,double vel,UInt16 mode,UInt16 EZ_count)
+                // [核对] mode/home_dir 的编号含义按《雷赛DMC系列运动控制器编程手册》确认
                 ushort mode;
+                ushort homeDir;
                 switch (_homeMode[axis])
                 {
-                    case HomeMode.LimitReverse: mode = 0; break;
-                    case HomeMode.HomeSwitch: mode = 1; break;
-                    case HomeMode.HomeSwitchIndex: mode = 2; break;
-                    case HomeMode.IndexOnly: mode = 3; break;
-                    default: mode = 2; break;
+                    case HomeMode.LimitReverse: mode = 0; homeDir = 1; break;
+                    case HomeMode.HomeSwitch: mode = 1; homeDir = 0; break;
+                    case HomeMode.HomeSwitchIndex: mode = 2; homeDir = 0; break;
+                    case HomeMode.IndexOnly: mode = 3; homeDir = 0; break;
+                    default: mode = 2; homeDir = 0; break;
                 }
-                dmc_set_homemode(Card, (ushort)axis, mode, 0, 0, 1,
-                    _homeVelSlow[axis] * _ppu[axis], _homeVelFast[axis] * _ppu[axis]);
-                short rc = dmc_home_move(Card, (ushort)axis);
+                short rc = dmc_set_homemode(Card, (ushort)axis, homeDir,
+                    _homeVelSlow[axis] * _ppu[axis], mode, 1);
+                if (rc != 0) return MotionResult.Fail(rc, "dmc_set_homemode");
+                rc = dmc_home_move(Card, (ushort)axis);
                 if (rc != 0) return MotionResult.Fail(rc, "dmc_home_move");
                 return MotionResult.Success("homing started");
             }
@@ -245,7 +285,7 @@ namespace MotionControl.Adapters.Leadshine
                 ushort card = Card;
                 dmc_set_profile(card, (ushort)axis, 0, Math.Abs(p.Vel) * _ppu[axis],
                     1000.0 / Math.Max(p.Acc, 1), 1000.0 / Math.Max(p.Dec, 1), 0);   // [核对] tacc/tdec单位ms
-                short rc = dmc_pmove(card, (ushort)axis, (long)Math.Round(to * _ppu[axis]), 1);  // [核对] mode 1=绝对(或相反)
+                short rc = dmc_pmove(card, (ushort)axis, (int)Math.Round(to * _ppu[axis]), 1);  // [核对] posi_mode 1=绝对(或相反)
                 if (rc != 0) return MotionResult.Fail(rc, "dmc_pmove");
                 return MotionResult.Success();
             }
@@ -302,7 +342,7 @@ namespace MotionControl.Adapters.Leadshine
                 if (axisList == null || targetUser == null || axisList.Length != targetUser.Length)
                     return MotionResult.Fail(-4, "axisList/targetUser mismatch");
 
-                // 等时点位法（升级路径: dmc_line_unit 多轴插补, 见docs）
+                // 等时点位法（升级路径: 官方多轴插补 dmc_line_unit / dmc_arc_move_radius_unit，见docs）
                 double maxDelta = 1e-9;
                 double[] from = new double[axisList.Length];
                 double[] toArr = new double[axisList.Length];
@@ -322,7 +362,7 @@ namespace MotionControl.Adapters.Leadshine
                     double dist = Math.Abs(toArr[i] - from[i]);
                     double vi = Math.Max(dist / Math.Max(duration, 0.001), 1);
                     dmc_set_profile(Card, (ushort)ax0, 0, vi * _ppu[ax0], 50, 50, 0);
-                    short rc = dmc_pmove(Card, (ushort)ax0, (long)Math.Round(toArr[i] * _ppu[ax0]), 1);
+                    short rc = dmc_pmove(Card, (ushort)ax0, (int)Math.Round(toArr[i] * _ppu[ax0]), 1);
                     if (rc != 0) return MotionResult.Fail(rc, "dmc_pmove axis " + ax0);
                 }
                 return MotionResult.Success("equal-time line, axes=" + axisList.Length);
@@ -353,7 +393,7 @@ namespace MotionControl.Adapters.Leadshine
                     MotionResult rw = WaitMoveDone(axisX, 60000);
                     if (!rw.Ok) return rw;
                 }
-                // [升级路径] 雷赛硬件圆弧: dmc_arc_unit
+                // [升级路径] 雷赛硬件圆弧: 官方 dmc_arc_move_radius_unit / dmc_arc_move_center_unit / dmc_arc_move_3points_unit
                 return MotionResult.Success("arc done (32-seg linearization)");
             }
         }
@@ -389,8 +429,10 @@ namespace MotionControl.Adapters.Leadshine
             {
                 if (!_open) return 0;
 
-                short code = dmc_read_ad(Card, (ushort)index);
-                return code * 10.0 / 4096.0;   // [核对] 12bit/10V量程换算
+                // [真值] 官方原型 dmc_get_ad_input(ushort CardNo,ushort channel,ref double Vout)：输出即电压
+                double v = 0;
+                short rc = dmc_get_ad_input(Card, (ushort)index, ref v);
+                return rc == 0 ? v : 0;
             }
         }
 
@@ -400,9 +442,9 @@ namespace MotionControl.Adapters.Leadshine
             {
                 if (!_open) return MotionResult.Fail(-1, "not open");
 
-                ushort code = (ushort)Math.Round(volts / 10.0 * 4095);   // [核对] 12bit/10V量程
-                short rc = dmc_write_da(Card, (ushort)index, code);
-                if (rc != 0) return MotionResult.Fail(rc, "dmc_write_da " + index);
+                // [真值] 官方原型 dmc_set_da_output(UInt16 CardNo,UInt16 channel,double Vout)：入参即电压
+                short rc = dmc_set_da_output(Card, (ushort)index, volts);
+                if (rc != 0) return MotionResult.Fail(rc, "dmc_set_da_output " + index);
                 return MotionResult.Success();
             }
         }

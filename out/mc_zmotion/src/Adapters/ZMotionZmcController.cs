@@ -1,6 +1,6 @@
 // =====================================================================
 //  正运动 ZMC 系列 适配器（zauxdll.dll）
-//  生成工具: 上位机代码工厂 v1.0 | 2026-10-22 12:10:22
+//  生成工具: 上位机代码工厂 v1.0 | 2026-10-22 15:51:27
 //  KB级别: B —— 核心API已映射(EtherCAT网络连接/当量/点位/回零/IO/模拟量)。DLL名已按PE导出表改为 zauxdll.dll，ZAux_Direct 系列函数名与参数表已按官方C#绑定/C头文件逐条核对。
 //  上真机前按 docs/ApiChecklist.md 核对签名（标注 [核对] 处）
 // =====================================================================
@@ -53,7 +53,7 @@ namespace MotionControl.Adapters.ZMotion
         //   本套件 P/Invoke 20 条：知识库钉扎 17 / 未收录(显式降级) 3
         //   核对进度（钉扎条目）：manual 0 / hardware 0 / auto 0 / none 17
         //   ⚠ 未核对 17 条：ZAux_OpenEth, ZAux_Close, ZAux_Direct_SetUnits, ZAux_Direct_SetSpeed, ZAux_Direct_SetAccel, ZAux_Direct_SetDecel, ZAux_Direct_Single_MoveAbs, ZAux_Direct_Single_Move, ZAux_Direct_MoveAbs, ZAux_Direct_Single_Vmove, ZAux_Direct_Single_Cancel, ZAux_Direct_Single_Datum, ZAux_Direct_GetMpos, ZAux_Direct_GetDpos, ZAux_Direct_GetIfIdle, ZAux_Direct_GetIn, ZAux_Direct_SetOp —— 已标 TODO，不许当事实用
-        //   复核：mcopilot 仓库跑 scripts/annotate_provenance.py --check；重新生成本套件即自动继承最新口径
+        //   复核：mcopilot 仓库跑 scripts/verify_traekb_citations.py；重新生成本套件即自动继承最新口径
 
         // [真值] DLL 名取自 dll_exports.csv(PE导出表)：官方是 zauxdll.dll，不存在 zmcaux.dll
         // [真值] 函数名/参数表取自 zmotion.csv(官方C#绑定) 与 zmotion_cpp.csv(官方C头文件)

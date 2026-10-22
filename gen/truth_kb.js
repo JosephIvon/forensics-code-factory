@@ -19,9 +19,16 @@
   // 工厂品牌 id → mcopilot 知识库文件名（knowledge/sdks/<名>.json）。没有对应文件的品牌走降级路径。
   var BRAND_SDK = { leadshine: 'dmc', gts: 'gts', zmotion: 'zmotion' };
 
+  // 知识库发现顺序：环境变量 MCOPILOT_ROOT → 同级兄弟目录 ../mcopilot。
+  // **不写死本机绝对路径**——写死会让换机的人直接失联（本仓 2026-10-22 公开前审已处理）。
   var DEFAULT_ROOTS = [
     (typeof process !== 'undefined' && process.env && process.env.MCOPILOT_ROOT) || null,
-    'D:\\workspace\\mcopilot'
+    (function () {
+      try {
+        var p = tryRequire('path');
+        return (p && typeof __dirname !== 'undefined') ? p.join(__dirname, '..', '..', 'mcopilot') : null;
+      } catch (e) { return null; }
+    })()
   ];
 
   var _mc = null;          // { root, sdks, available, note } —— 知识库加载缓存（进程内一次）
@@ -190,7 +197,7 @@
              ' / auto ' + audit.chk.auto + ' / none ' + audit.chk.none);
       if (audit.noneList.length) L.push('        //   ⚠ 未核对 ' + audit.noneList.length + ' 条：' + audit.noneList.join(', ') + ' —— 已标 TODO，不许当事实用');
       if (audit.mismatched.length) L.push('        //   ⚠ 口径不一致 ' + audit.mismatched.length + ' 条：' + audit.mismatched.map(function (m) { return m.fn; }).join(', '));
-      L.push('        //   复核：mcopilot 仓库跑 scripts/annotate_provenance.py --check；重新生成本套件即自动继承最新口径');
+      L.push('        //   复核：mcopilot 仓库跑 scripts/verify_traekb_citations.py；重新生成本套件即自动继承最新口径');
     } else {
       L.push('        //   ⚠ ' + audit.sourceNote);
       L.push('        //   本套件全部 P/Invoke 按 [ 源 未标注 | 核对 none | 提取 judgment ] 处理 —— 上线前必须逐条按官方手册核对');
@@ -226,10 +233,10 @@
     var s = '';
     s += '# docs/TruthChain.md — P/Invoke 真值链审计\n\n';
     s += '> 数据源：' + (mc.available ? ('mcopilot 仓库 `knowledge/sdks/{dmc,gts,zmotion}.json`（生成时实时读取，非复制）\n') : '⚠ mcopilot 知识库不可达，本套件全部按未标注降级\n');
-    s += '> 根目录：' + (mc.root || '—') + '　|　生成时间：' + ts + '\n\n';
+    s += '> 知识库根目录：<mcopilot 仓根>（生成时按 MCOPILOT_ROOT 或同级兄弟目录发现，不写入本机绝对路径）　|　生成时间：' + ts + '\n\n';
     s += '**三根轴**：源 = verified（这条结论从哪来）｜核对 = check（验到哪一步：manual 人工 / hardware 真机 / auto 机器比对 / none 未核对）｜提取 = extraction（签名对是否等于调用对；judgment = 有语义陷阱，必须人签字）。\n\n';
     s += '**纪律（R2）**：judgment 条目必须 manual/hardware 签字才能当事实用；`check=none` 的条目生成代码里已标 TODO[需核对厂商手册]。\n';
-    s += '**接缝说明**：本工厂的知识库不另设真值副本 —— mcopilot 侧 `scripts/annotate_provenance.py --check` 复核后，重新生成本套件即自动继承最新口径。\n\n';
+    s += '**接缝说明**：本工厂的知识库不另设真值副本 —— mcopilot 侧 `scripts/verify_traekb_citations.py` 复核后，重新生成本套件即自动继承最新口径。\n\n';
 
     for (var i = 0; i < _runAudits.length; i++) {
       var a = _runAudits[i];
@@ -269,10 +276,11 @@
     var f = path.join(mc.root, 'knowledge', 'shared_eval.json');
     var ev;
     try { ev = JSON.parse(fs.readFileSync(f, 'utf8')); }
-    catch (e) { return s + '⚠ 共享评测集缺失（' + f + '）——mcopilot 仓库更新后重新生成。\n'; }
+    catch (e) { return s + '⚠ 共享评测集缺失（mcopilot 仓 `knowledge/shared_eval.json`）——该文件当前未入库，mcopilot 仓更新后重新生成。\n'; }
 
     s += '> 数据源：mcopilot `knowledge/shared_eval.json`（生成时实时读取，非复制）\n';
-    s += '> 实测对照：由 mcopilot `scripts/joint_eval.py` 真跑两边后生成对照矩阵；本文件只回答「本套件对哪些行为断言负责」。\n\n';
+    s += '> 实测对照：**断言本体在工厂侧生成代码内**（`[接缝3] BEH-xx` 行为断言自检）；mcopilot 侧的共享评测集文件与对照脚本当前未入库，'
+       + '故本表暂无 mcopilot 侧行——本文件只回答「本套件对哪些行为断言负责」。\n\n';
     s += '**规则**：工厂端到端 PASS 只有落在共享评测集的断言上才算有背书——';
     s += '空白项（本套件应验未验）是整改清单，n/a 项（接口无此概念）是能力矩阵差异，不许算 FAIL。\n\n';
 

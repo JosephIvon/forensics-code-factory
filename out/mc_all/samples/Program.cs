@@ -10,7 +10,7 @@ namespace Samples
     /// <summary>
     /// 点胶工艺示例（JD职责6: 路径规划/出胶时序/缺胶溢胶判定 + 职责8: SPC统计）
     /// 换卡演示: 只修改 CREATE_BRAND 一行，业务流程零改动（JD职责3 目标）。
-    /// 生成时间: 2026-10-22 12:00:23
+    /// 生成时间: 2026-10-22 16:11:50
     /// </summary>
     public static class Program
     {

@@ -18,15 +18,6 @@ namespace MotionControl.Core
         string DeviceName { get; }
         bool IsOpen { get; }
 
-        /// <summary>
-        /// 本品牌是否支持 S 曲线平滑（false ⇒ <see cref="MoveParams.JerkRatio"/> 被忽略）。
-        ///
-        /// 存在的理由：D7 核实发现雷赛/正运动/软赢此前**静默丢弃** JerkRatio ——
-        /// 调用方设了值却毫无效果，且不崩不抛、无任何告警。
-        /// 「明确不支持」远比「悄悄不生效」安全：调用方可以据此降级工艺或改用梯形曲线。
-        /// </summary>
-        bool SupportsJerkProfile { get; }
-
         MotionResult Open(ControllerConnectInfo info);
         MotionResult Close();
         MotionResult ConfigureAxis(AxisConfig cfg);
