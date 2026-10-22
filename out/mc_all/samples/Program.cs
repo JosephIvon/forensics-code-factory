@@ -10,7 +10,7 @@ namespace Samples
     /// <summary>
     /// 点胶工艺示例（JD职责6: 路径规划/出胶时序/缺胶溢胶判定 + 职责8: SPC统计）
     /// 换卡演示: 只修改 CREATE_BRAND 一行，业务流程零改动（JD职责3 目标）。
-    /// 生成时间: 2026-10-20 09:11:42
+    /// 生成时间: 2026-10-22 12:00:23
     /// </summary>
     public static class Program
     {
@@ -53,11 +53,19 @@ namespace Samples
                 // 2. 工艺流程
                 RunProcess(c);
 
+                // 2.5 行为断言自检（接缝3 共享评测集 BEH-01/03/04/07/09/14/15）
+                BehaviorSelfCheck(c);
+
                 // 3. SPC 统计（JD职责8: 数据采集 SPC 统计）
                 SpcReport(c);
 
                 Console.WriteLine("RESULT: PASS - 流程完成，报告见 glue_report.csv");
                 return 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("RESULT: FAIL - " + ex.Message);
+                return 1;
             }
             finally
             {
@@ -102,6 +110,85 @@ namespace Samples
             double fbForce = c.GetAi(0);
             Console.WriteLine("[FORCE] setpoint=1.25V feedback={0:F3}V", fbForce);
             Check(c.SetAo(0, 0.0), "force release");
+
+            // ---- [接缝3·BEH-08] 参数守卫自检：越界轴号/端口必须显式拒绝，不许沉默 ----
+            MotionResult badMove = c.MoveTo(99, 1.0, fast, MoveMode.Absolute);
+            if (badMove.Ok) throw new Exception("FAIL at axis-guard: 越界轴号 MoveTo(99) 被沉默接受");
+            Console.WriteLine("[SELFCHECK] MoveTo(99) -> " + badMove);
+            bool threw = false;
+            try { c.GetCommandPos(99); } catch (ArgumentOutOfRangeException) { threw = true; }
+            if (!threw) throw new Exception("FAIL at axis-guard: 读数方法越界未抛 ArgumentOutOfRangeException");
+            MotionResult badDo = c.SetDo(999, true);
+            if (badDo.Ok) throw new Exception("FAIL at axis-guard: 越界 DO 端口 SetDo(999) 被沉默接受");
+            MotionResult badAo = c.SetAo(99, 1.0);
+            if (badAo.Ok) throw new Exception("FAIL at axis-guard: 越界 AO 端口 SetAo(99) 被沉默接受");
+            Console.WriteLine("[SELFCHECK] axis/port guard OK —— 越界轴号与端口全部显式拒绝 (BEH-08)");
+        }
+
+        // ---- [接缝3] 行为断言自检：shared_eval.json BEH-01/03/04/07/09/14/15 ----
+        static void BehaviorSelfCheck(IMotionController c)
+        {
+            MoveParams bv = new MoveParams(); bv.Vel = 50; bv.Acc = 500;
+
+            // [BEH-07] 非法脉冲当量必须显式拒绝（错误码风格）
+            AxisConfig badScale = new AxisConfig();
+            badScale.AxisIndex = 7; badScale.PulsesPerUnit = 0;
+            MotionResult rScale = c.ConfigureAxis(badScale);
+            if (rScale.Ok) throw new Exception("FAIL at BEH-07: PulsesPerUnit=0 被沉默接受");
+            Console.WriteLine("[BEH-07] PulsesPerUnit=0 -> " + rScale + " 拒绝 OK");
+
+            // [BEH-04] 单位口径：到位准确且指令/反馈同口径
+            Check(c.MoveTo(0, 10.0, bv, MoveMode.Absolute), "BEH-04 move");
+            Check(c.WaitMoveDone(0, 10000), "BEH-04 wait");
+            double cmd = c.GetCommandPos(0), fb = c.GetFeedbackPos(0);
+            if (Math.Abs(cmd - 10.0) >= 0.001) throw new Exception("FAIL at BEH-04: 指令位置应为 10.0，实际 " + cmd.ToString("F6"));
+            if (Math.Abs(cmd - fb) > 0.05) throw new Exception("FAIL at BEH-04: 指令/反馈口径不一致 cmd=" + cmd.ToString("F6") + " fb=" + fb.ToString("F6"));
+            Console.WriteLine("[BEH-04] cmd={0:F3} fb={1:F6} 口径一致 OK", cmd, fb);
+
+            // [BEH-14] 相对定位增量正确：10 + rel(5) = 15
+            Check(c.MoveTo(0, 5.0, bv, MoveMode.Relative), "BEH-14 move rel");
+            Check(c.WaitMoveDone(0, 10000), "BEH-14 wait");
+            double p15 = c.GetCommandPos(0);
+            if (Math.Abs(p15 - 15.0) >= 0.001) throw new Exception("FAIL at BEH-14: 10+5 应为 15.0，实际 " + p15.ToString("F6"));
+            Console.WriteLine("[BEH-14] 10 + rel(5) = {0:F3} OK", p15);
+
+            // [BEH-01] 跟随误差必须非零（抓假反馈）：运动中持续采样
+            Check(c.MoveTo(0, 60.0, bv, MoveMode.Absolute), "BEH-01 move far");
+            double maxErr = 0.0;
+            while ((c.GetState(0) & AxisState.Moving) == AxisState.Moving)
+            {
+                double e = Math.Abs(c.GetCommandPos(0) - c.GetFeedbackPos(0));
+                if (e > maxErr) maxErr = e;
+            }
+            if (maxErr < 0.0001) throw new Exception("FAIL at BEH-01: 运动中跟随误差恒为 0——反馈是假数据（指令副本）");
+            Console.WriteLine("[BEH-01] 运动中最大跟随误差 = {0:F6} 非零 OK", maxErr);
+            Check(c.WaitMoveDone(0, 10000), "BEH-01 settle");
+
+            // [BEH-03] 点动方向必须与速度符号一致
+            double j0 = c.GetCommandPos(0);
+            Check(c.MoveJog(0, 10.0, bv), "BEH-03 jog+");
+            Check(c.WaitMoveDone(0, 5000), "BEH-03 jog+ wait");
+            double j1 = c.GetCommandPos(0);
+            if (j1 <= j0) throw new Exception("FAIL at BEH-03: 正速度点动后位置必须增加 " + j0.ToString("F3") + " -> " + j1.ToString("F3"));
+            Check(c.MoveJog(0, -10.0, bv), "BEH-03 jog-");
+            Check(c.WaitMoveDone(0, 5000), "BEH-03 jog- wait");
+            double j2 = c.GetCommandPos(0);
+            if (j2 >= j1) throw new Exception("FAIL at BEH-03: 负速度点动后位置必须减少 " + j1.ToString("F3") + " -> " + j2.ToString("F3"));
+            Console.WriteLine("[BEH-03] jog +10 -> {0:F3}，-10 -> {1:F3} 方向一致 OK", j1, j2);
+
+            // [BEH-09] 停止后不再处于运动中
+            Check(c.MoveTo(0, 400.0, bv, MoveMode.Absolute), "BEH-09 move far");
+            Check(c.Stop(0, true), "BEH-09 emergency stop");
+            if ((c.GetState(0) & AxisState.Moving) == AxisState.Moving)
+                throw new Exception("FAIL at BEH-09: 紧急停止后仍处于运动中");
+            Console.WriteLine("[BEH-09] 紧急停止后 Moving=0 OK");
+
+            // [BEH-15] 回零后位置归零（回零是工件坐标的基准）
+            Check(c.Home(0), "BEH-15 home");
+            Check(c.WaitHomeDone(0, 30000), "BEH-15 home wait");
+            double h = c.GetCommandPos(0);
+            if (Math.Abs(h) >= 0.001) throw new Exception("FAIL at BEH-15: 回零后位置应为 0，实际 " + h.ToString("F6"));
+            Console.WriteLine("[BEH-15] 回零后位置 = {0:F6} 归零 OK", h);
         }
 
         static void SpcReport(IMotionController c)

@@ -1,6 +1,6 @@
 // =====================================================================
 //  雷赛 DMC/EMC 系列 (LTDMC) 适配器（LTDMC.dll）
-//  生成工具: 上位机代码工厂 v1.0 | 2026-10-20 09:12:01
+//  生成工具: 上位机代码工厂 v1.0 | 2026-10-20 12:43:08
 //  KB级别: B —— 核心API已映射(board/点位/停止/位置/IO/模拟量)。函数名与参数表已按官方C#绑定/C头文件核对；官方无软件使能接口(脉冲卡硬线使能)，使能项标注未实现。
 //  上真机前按 docs/ApiChecklist.md 核对签名（标注 [核对] 处）
 // =====================================================================
@@ -45,38 +45,60 @@ namespace MotionControl.Adapters.Leadshine
         public bool IsOpen { get { return _open; } }
 
         #region 厂商 API 导入（[核对] = 签名需按手册确认）
+        // ── 真值链（每条 P/Invoke 上方：[ 源 | 核对 | 提取 ]）──
+        //   数据源：mcopilot knowledge/sdks/dmc.json（生成时实时读取，非复制）
+        //   源=verified 这条结论从哪来 ｜ 核对=check 验到哪一步 ｜ 提取=extraction 签名对≠调用对时是否需人签字
+        //   本套件 P/Invoke 16 条：知识库钉扎 16 / 未收录(显式降级) 0
+        //   核对进度（钉扎条目）：manual 16 / hardware 0 / auto 0 / none 0
+        //   复核：mcopilot 仓库跑 scripts/annotate_provenance.py --check；重新生成本套件即自动继承最新口径
 
         // [真值] 函数名/参数表取自 leisai.csv(官方C#绑定) 与 leisai_cpp.csv(官方C头文件)，并已对 dll_exports.csv(PE导出表) 校验
+        // [ 源 public-doc | 核对 manual | 提取 judgment ]  LTDMC.cs:28 · 导出表✓
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_board_init();
+        // [ 源 public-doc | 核对 manual | 提取 mechanical ]  LTDMC.cs:34 · 导出表✓
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_board_close();
+        // [ 源 public-doc | 核对 manual | 提取 judgment ]  LTDMC.cs:213 · 导出表✓
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_pmove(ushort card, ushort axis, int dist, ushort posi_mode);
+        // [ 源 public-doc | 核对 manual | 提取 judgment ]  LTDMC.cs:188 · 导出表✓
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_set_profile(ushort card, ushort axis, double minVel, double maxVel, double tacc, double tdec, double stopVel);
+        // [ 源 official-binding | 核对 manual | 提取 judgment ]  LTDMC.cs:955 · 导出表✓
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_stop(ushort card, ushort axis, ushort stopMode);
+        // [ 源 public-doc | 核对 manual | 提取 judgment ]  LTDMC.cs:936 · 手册 P.160 · 导出表✓
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_check_done(ushort card, ushort axis);
+        // [ 源 public-doc | 核对 manual | 提取 judgment ]  LTDMC.cs:915 · 导出表✓
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int dmc_get_position(ushort card, ushort axis);
+        // [ 源 public-doc | 核对 manual | 提取 judgment ]  LTDMC.cs:878 · 导出表✓
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int dmc_get_encoder(ushort card, ushort axis);
+        // [ 源 official-manual | 核对 manual | 提取 judgment ]  LTDMC.cs:247 · 导出表✓
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_vmove(ushort card, ushort axis, ushort dir);
+        // [ 源 official-binding | 核对 manual | 提取 judgment ]  LTDMC.cs:228 · 导出表✓
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_change_speed(ushort card, ushort axis, double currVel, double taccdec);
+        // [ 源 public-doc | 核对 manual | 提取 mechanical ]  LTDMC.cs:353 · 导出表✓
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_home_move(ushort card, ushort axis);
+        // [ 源 official-manual | 核对 manual | 提取 judgment ]  LTDMC.cs:342 · 导出表✓
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_set_homemode(ushort card, ushort axis, ushort homeDir, double vel, ushort mode, ushort ezCount);
+        // [ 源 public-doc | 核对 manual | 提取 judgment ]  LTDMC.cs:756 · 导出表✓
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_read_inbit(ushort card, ushort bitno);
+        // [ 源 public-doc | 核对 manual | 提取 mechanical ]  LTDMC.cs:759 · 导出表✓
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_write_outbit(ushort card, ushort bitno, ushort onOff);
+        // [ 源 official-binding | 核对 manual | 提取 judgment ]  LTDMC.cs:1282 · 导出表✓
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_get_ad_input(ushort card, ushort channel, ref double vout);
+        // [ 源 official-binding | 核对 manual | 提取 judgment ]  LTDMC.cs:1277 · 导出表✓
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_set_da_output(ushort card, ushort channel, double vout);
         #endregion

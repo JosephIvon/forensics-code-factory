@@ -8,3 +8,7 @@ node_modules/
 .vscode/
 .idea/
 *.swp
+
+# 构建产物与运行日志（收尾裁决 2026-10-22：bin/exe 不入库，.zip 按既有惯例跟踪）
+bin/
+glue_*.txt

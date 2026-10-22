@@ -1,6 +1,6 @@
 // =====================================================================
 //  正运动 ZMC 系列 适配器（zauxdll.dll）
-//  生成工具: 上位机代码工厂 v1.0 | 2026-10-20 09:12:01
+//  生成工具: 上位机代码工厂 v1.0 | 2026-10-20 12:43:08
 //  KB级别: B —— 核心API已映射(EtherCAT网络连接/当量/点位/回零/IO/模拟量)。DLL名已按PE导出表改为 zauxdll.dll，ZAux_Direct 系列函数名与参数表已按官方C#绑定/C头文件逐条核对。
 //  上真机前按 docs/ApiChecklist.md 核对签名（标注 [核对] 处）
 // =====================================================================
@@ -47,47 +47,73 @@ namespace MotionControl.Adapters.ZMotion
         public bool IsOpen { get { return _open; } }
 
         #region 厂商 API 导入（[核对] = 签名需按手册确认）
+        // ── 真值链（每条 P/Invoke 上方：[ 源 | 核对 | 提取 ]）──
+        //   数据源：mcopilot knowledge/sdks/zmotion.json（生成时实时读取，非复制）
+        //   源=verified 这条结论从哪来 ｜ 核对=check 验到哪一步 ｜ 提取=extraction 签名对≠调用对时是否需人签字
+        //   本套件 P/Invoke 20 条：知识库钉扎 20 / 未收录(显式降级) 0
+        //   核对进度（钉扎条目）：manual 20 / hardware 0 / auto 0 / none 0
+        //   复核：mcopilot 仓库跑 scripts/annotate_provenance.py --check；重新生成本套件即自动继承最新口径
 
         // [真值] DLL 名取自 dll_exports.csv(PE导出表)：官方是 zauxdll.dll，不存在 zmcaux.dll
         // [真值] 函数名/参数表取自 zmotion.csv(官方C#绑定) 与 zmotion_cpp.csv(官方C头文件)
+        // [ 源 public-doc | 核对 manual | 提取 judgment ]  Zmcaux.cs:132 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi)]
         private static extern int ZAux_OpenEth([MarshalAs(UnmanagedType.LPStr)] string ipaddr, out IntPtr phandle);
+        // [ 源 public-doc | 核对 manual | 提取 mechanical ]  Zmcaux.cs:159 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int ZAux_Close(IntPtr handle);
+        // [ 源 official-binding | 核对 manual | 提取 judgment ]  Zmcaux.cs:1542 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int ZAux_Direct_SetUnits(IntPtr h, int iaxis, float value);
+        // [ 源 official-binding | 核对 manual | 提取 judgment ]  Zmcaux.cs:1442 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int ZAux_Direct_SetSpeed(IntPtr h, int iaxis, float value);
+        // [ 源 official-binding | 核对 manual | 提取 judgment ]  Zmcaux.cs:402 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int ZAux_Direct_SetAccel(IntPtr h, int iaxis, float value);
+        // [ 源 official-binding | 核对 manual | 提取 judgment ]  Zmcaux.cs:622 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int ZAux_Direct_SetDecel(IntPtr h, int iaxis, float value);
+        // [ 源 public-doc | 核对 manual | 提取 mechanical ]  Zmcaux.cs:2515 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int ZAux_Direct_Single_MoveAbs(IntPtr h, int iaxis, float fdistance);
+        // [ 源 public-doc | 核对 manual | 提取 mechanical ]  Zmcaux.cs:2505 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int ZAux_Direct_Single_Move(IntPtr h, int iaxis, float fdistance);
+        // [ 源 public-doc | 核对 manual | 提取 judgment ]  Zmcaux.cs:1645 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int ZAux_Direct_MoveAbs(IntPtr h, int imaxaxises, int[] piAxislist, float[] pfDposlist);
+        // [ 源 public-doc | 核对 manual | 提取 judgment ]  Zmcaux.cs:2475 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int ZAux_Direct_Single_Vmove(IntPtr h, int iaxis, int idir);
+        // [ 源 public-doc | 核对 manual | 提取 judgment ]  Zmcaux.cs:2465 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int ZAux_Direct_Single_Cancel(IntPtr h, int iaxis, int imode);
+        // [ 源 public-doc | 核对 manual | 提取 judgment ]  Zmcaux.cs:2485 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int ZAux_Direct_Single_Datum(IntPtr h, int iaxis, int imode);
+        // [ 源 public-doc | 核对 manual | 提取 judgment ]  Zmcaux.cs:1212 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int ZAux_Direct_GetMpos(IntPtr h, int iaxis, out float pfValue);
+        // [ 源 public-doc | 核对 manual | 提取 judgment ]  Zmcaux.cs:672 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int ZAux_Direct_GetDpos(IntPtr h, int iaxis, out float pfValue);
+        // [ 源 public-doc | 核对 manual | 提取 judgment ]  Zmcaux.cs:982 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int ZAux_Direct_GetIfIdle(IntPtr h, int iaxis, out int piValue);
+        // [ 源 official-binding | 核对 manual | 提取 judgment ]  Zmcaux.cs:208 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int ZAux_Direct_GetIn(IntPtr h, int ionum, out uint piValue);
+        // [ 源 public-doc | 核对 manual | 提取 judgment ]  Zmcaux.cs:218 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int ZAux_Direct_SetOp(IntPtr h, int ionum, uint iValue);
+        // [ 源 official-binding | 核对 manual | 提取 judgment ]  Zmcaux.cs:238 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int ZAux_Direct_GetAD(IntPtr h, int ionum, out float pfValue);
+        // [ 源 official-binding | 核对 manual | 提取 judgment ]  Zmcaux.cs:248 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int ZAux_Direct_SetDA(IntPtr h, int ionum, float fValue);
+        // [ 源 official-binding | 核对 manual | 提取 judgment ]  Zmcaux.cs:502 · 导出表✓
         [DllImport("zauxdll.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int ZAux_Direct_SetAxisEnable(IntPtr h, int iaxis, int iValue);
         #endregion

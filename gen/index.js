@@ -1,11 +1,11 @@
 // index.js - 聚合入口: 自然语言解析 + 适配层工程生成
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
-    module.exports = factory(require('./zip.js'), require('./core.js'), require('./adapters_kb.js'), require('./modbus.js'));
+    module.exports = factory(require('./zip.js'), require('./core.js'), require('./adapters_kb.js'), require('./modbus.js'), require('./truth_kb.js'));
   } else {
-    root.MCGen = factory(root.MCZip, root.MCCore, root.MCKb, root.MCModbus);
+    root.MCGen = factory(root.MCZip, root.MCCore, root.MCKb, root.MCModbus, root.MCTruth);
   }
-})(typeof self !== 'undefined' ? self : this, function (MCZip, MCCore, MCKb, MCModbus) {
+})(typeof self !== 'undefined' ? self : this, function (MCZip, MCCore, MCKb, MCModbus, MCTruth) {
 
   // ---------- 品牌元数据（UI下拉 + 解析词表） ----------
   var BRANDS = [
@@ -78,6 +78,7 @@
     steps.push({ tag: '架构', msg: '分层: Core(抽象) / Adapters(适配) / Virtual(仿真) / samples(工艺) / docs(文档) / build(两套编译)' });
 
     var files = [];
+    MCTruth.resetRun();   // 真值链审计：本次生成从零累计
     var core = MCCore.coreFiles(cfg);
     for (var i = 0; i < core.length; i++) files.push(core[i]);
     steps.push({ tag: '代码', msg: '生成抽象层 Core（接口/配置/结果对象，业务唯一依赖）' });
@@ -90,6 +91,8 @@
     }
     files = files.concat(adapterFiles);
     steps.push({ tag: '代码', msg: '生成适配器 x' + adapterFiles.length + '（P/Invoke + 单位换算 + 线程锁 + 错误映射）' });
+    var tStat = MCTruth.runSummary();
+    if (tStat) steps.push({ tag: '真值链', msg: tStat });
 
     files.push(MCCore.virtualFile());
     steps.push({ tag: '代码', msg: '生成 VirtualController（无硬件仿真，单元测试/CI 可用）' });
@@ -105,6 +108,18 @@
       : [kb]);
     for (var d = 0; d < docs.length; d++) files.push(docs[d]);
     steps.push({ tag: '文档', msg: '生成能力差异矩阵 + P/Invoke 核对清单（清单与代码同源，k/n 按官方真值核对状态统计；依据须为厂商官方手册/头文件）' });
+
+    var truthDoc = MCTruth.docsFile();
+    if (truthDoc) {
+      files.push({ path: 'docs/TruthChain.md', content: truthDoc });
+      steps.push({ tag: '文档', msg: '生成 docs/TruthChain.md（P/Invoke 真值链审计：逐条对照 mcopilot 官方绑定口径）' });
+    }
+
+    var jointDoc = MCTruth.jointEvalFile();   // 接缝 3：共享行为评测集（本套件对哪些断言负责）
+    if (jointDoc) {
+      files.push({ path: 'docs/JointEval.md', content: jointDoc });
+      steps.push({ tag: '文档', msg: '生成 docs/JointEval.md（共享行为评测集对照：与 mcopilot 自检断言逐条对齐，空白项=整改清单）' });
+    }
 
     var builds = MCCore.buildFiles(cfg);
     for (var b = 0; b < builds.length; b++) files.push(builds[b]);

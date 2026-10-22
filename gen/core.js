@@ -282,6 +282,8 @@
 '            lock (_lock)\n' +
 '            {\n' +
 '                if (cfg == null) return MotionResult.Fail(-6, "null config");\n' +
+'                MotionResult gCfg = CheckAxis(cfg.AxisIndex); if (!gCfg.Ok) return gCfg;\n' +
+'                if (cfg.PulsesPerUnit <= 0) return MotionResult.Fail(-9, "PulsesPerUnit must be > 0, got " + cfg.PulsesPerUnit);\n' +
 '                AxisSim a = GetAxis(cfg.AxisIndex);\n' +
 '                a.HomeOffset = cfg.Home.Offset;\n' +
 '                return MotionResult.Success("axis " + cfg + " configured (virtual)");\n' +
@@ -292,7 +294,8 @@
 '        {\n' +
 '            lock (_lock)\n' +
 '            {\n' +
-'                if (!_open) return MotionResult.Fail(-1, "not open");\n' +
+'                if (!_open) return MotionResult.Fail(-1, "not open");\n' +'                MotionResult g = CheckAxis(axis); if (!g.Ok) return g;\n' +
+
 '                AxisSim a = GetAxis(axis);\n' +
 '                a.Enabled = on;\n' +
 '                return MotionResult.Success();\n' +
@@ -330,9 +333,11 @@
 '        {\n' +
 '            lock (_lock)\n' +
 '            {\n' +
-'                if (!_open) return MotionResult.Fail(-1, "not open");\n' +
+'                if (!_open) return MotionResult.Fail(-1, "not open");\n' +'                MotionResult g = CheckAxis(axis); if (!g.Ok) return g;\n' +
+
 '                AxisSim a = GetAxis(axis);\n' +
 '                a.Homing = true;\n' +
+'                a.Homed = false; // [接缝3·BEH-15] 回零进行中不算已回零：不清此标志，WaitHomeDone 对已回零轴立即返回，重回零根本没等（行为断言抓到的真 bug）\n' +
 '                a.HomeStart = DateTime.Now;\n' +
 '                return MotionResult.Success("homing started (virtual, ~1.2s)");\n' +
 '            }\n' +
@@ -341,7 +346,8 @@
 '        public bool IsHomed(int axis) { lock (_lock) { Update(); return GetAxis(axis).Homed; } }\n' +
 '\n' +
 '        public MotionResult WaitHomeDone(int axis, int timeoutMs)\n' +
-'        {\n' +
+'        {\n' +'            MotionResult g0 = CheckAxis(axis); if (!g0.Ok) return g0;\n' +
+
 '            DateTime t0 = DateTime.Now;\n' +
 '            while ((DateTime.Now - t0).TotalMilliseconds < timeoutMs)\n' +
 '            {\n' +
@@ -360,7 +366,8 @@
 '        {\n' +
 '            lock (_lock)\n' +
 '            {\n' +
-'                if (!_open) return MotionResult.Fail(-1, "not open");\n' +
+'                if (!_open) return MotionResult.Fail(-1, "not open");\n' +'                MotionResult g = CheckAxis(axis); if (!g.Ok) return g;\n' +
+
 '                double from = GetAxis(axis).CmdPos;\n' +
 '                double to = (mode == MoveMode.Absolute) ? posUser : from + posUser;\n' +
 '                EnqueueSegment(new int[] { axis }, new double[] { to }, p);\n' +
@@ -372,7 +379,8 @@
 '        {\n' +
 '            lock (_lock)\n' +
 '            {\n' +
-'                if (!_open) return MotionResult.Fail(-1, "not open");\n' +
+'                if (!_open) return MotionResult.Fail(-1, "not open");\n' +'                MotionResult g = CheckAxis(axis); if (!g.Ok) return g;\n' +
+
 '                // 虚拟点动: 以 1 秒为目标步进的持续运动\n' +
 '                double to = GetAxis(axis).CmdPos + velUserPerSec * 1.0;\n' +
 '                MoveParams pj = new MoveParams();\n' +
@@ -385,7 +393,8 @@
 '        public MotionResult Stop(int axis, bool emergency)\n' +
 '        {\n' +
 '            lock (_lock)\n' +
-'            {\n' +
+'            {\n' +'                MotionResult g = CheckAxis(axis); if (!g.Ok) return g;\n' +
+
 '                _queue.Clear();\n' +
 '                AxisSim a = GetAxis(axis);\n' +
 '                a.Moving = false;\n' +
@@ -394,7 +403,8 @@
 '        }\n' +
 '\n' +
 '        public MotionResult WaitMoveDone(int axis, int timeoutMs)\n' +
-'        {\n' +
+'        {\n' +'            MotionResult g0 = CheckAxis(axis); if (!g0.Ok) return g0;\n' +
+
 '            DateTime t0 = DateTime.Now;\n' +
 '            while ((DateTime.Now - t0).TotalMilliseconds < timeoutMs)\n' +
 '            {\n' +
@@ -415,6 +425,7 @@
 '                if (!_open) return MotionResult.Fail(-1, "not open");\n' +
 '                if (axisList == null || targetUser == null || axisList.Length != targetUser.Length)\n' +
 '                    return MotionResult.Fail(-4, "axisList/targetUser length mismatch");\n' +
+'                for (int gi = 0; gi < axisList.Length; gi++) { MotionResult gL = CheckAxis(axisList[gi]); if (!gL.Ok) return gL; }\n' +
 '                double[] to = new double[axisList.Length];\n' +
 '                double distSq = 0;\n' +
 '                for (int i = 0; i < axisList.Length; i++)\n' +
@@ -433,6 +444,8 @@
 '            lock (_lock)\n' +
 '            {\n' +
 '                if (!_open) return MotionResult.Fail(-1, "not open");\n' +
+'                MotionResult gX = CheckAxis(axisX); if (!gX.Ok) return gX;\n' +
+'                MotionResult gY = CheckAxis(axisY); if (!gY.Ok) return gY;\n' +
 '                double x0 = GetAxis(axisX).CmdPos, y0 = GetAxis(axisY).CmdPos;\n' +
 '                double cx = x0 + i, cy = y0 + j;\n' +
 '                double r = Math.Sqrt(i * i + j * j);\n' +
@@ -462,13 +475,14 @@
 '\n' +
 '        public MotionResult SetDo(int index, bool on)\n' +
 '        {\n' +
-'            lock (_lock) { _doMap[index] = on; return MotionResult.Success("DO" + index + "=" + on); }\n' +
+'            lock (_lock) { MotionResult gP = CheckPort("DO", index, DO_MAX); if (!gP.Ok) return gP; _doMap[index] = on; return MotionResult.Success("DO" + index + "=" + on); }\n' +
 '        }\n' +
 '\n' +
 '        public bool GetDi(int index)\n' +
 '        {\n' +
 '            lock (_lock)\n' +
 '            {\n' +
+'                if (index < 0 || index > DI_MAX) throw new ArgumentOutOfRangeException("index", index, "DI 0-" + DI_MAX);\n' +
 '                double t = (DateTime.Now - _boot).TotalSeconds;\n' +
 '                // 周期性翻转的虚拟 DI（周期~10s/位错开），保证 WaitDi 可被满足\n' +
 '                return Math.Sin(t * 0.6 + index * 1.7) > 0;\n' +
@@ -479,6 +493,7 @@
 '        {\n' +
 '            lock (_lock)\n' +
 '            {\n' +
+'                if (index < 0 || index > AI_MAX) throw new ArgumentOutOfRangeException("index", index, "AI 0-" + AI_MAX);\n' +
 '                double t = (DateTime.Now - _boot).TotalSeconds;\n' +
 '                // 2.5V +/-0.08V 正弦 + 10mV 噪声 —— 模拟压力/胶量传感器\n' +
 '                return 2.5 + 0.08 * Math.Sin(t * 2.0 + index * 0.7) + (_rnd.NextDouble() - 0.5) * 0.02;\n' +
@@ -487,11 +502,12 @@
 '\n' +
 '        public MotionResult SetAo(int index, double volts)\n' +
 '        {\n' +
-'            lock (_lock) { _aoMap[index] = volts; return MotionResult.Success("AO" + index + "=" + volts); }\n' +
+'            lock (_lock) { MotionResult gA = CheckPort("AO", index, AO_MAX); if (!gA.Ok) return gA; _aoMap[index] = volts; return MotionResult.Success("AO" + index + "=" + volts); }\n' +
 '        }\n' +
 '\n' +
 '        public MotionResult WaitDi(int index, bool level, int timeoutMs)\n' +
 '        {\n' +
+'            MotionResult gW = CheckPort("DI", index, DI_MAX); if (!gW.Ok) return gW;\n' +
 '            DateTime t0 = DateTime.Now;\n' +
 '            while ((DateTime.Now - t0).TotalMilliseconds < timeoutMs)\n' +
 '            {\n' +
@@ -502,6 +518,24 @@
 '        }\n' +
 '\n' +
 '        // ---------------- 内部: 惰性推进仿真 ----------------\n' +
+'        // ---- [接缝3·BEH-08] 参数守卫 ----\n' +
+'        // 返回 MotionResult 的方法：越界必须返回 Fail（错误码风格，与本套件一致），\n' +
+'        // 不许靠深处异常冒泡、更不许沉默接受。真机适配器抄这里时必须保留同语义校验——\n' +
+'        // 越界轴号在真机上是非法内存访问（栈损坏级）。\n' +
+'        private const int AXIS_MAX = 7, DI_MAX = 15, DO_MAX = 15, AI_MAX = 7, AO_MAX = 7;\n' +
+'\n' +
+'        private MotionResult CheckAxis(int axis)\n' +
+'        {\n' +
+'            if (axis < 0 || axis > AXIS_MAX) return MotionResult.Fail(-7, "axis " + axis + " out of range 0-" + AXIS_MAX);\n' +
+'            return MotionResult.Success();\n' +
+'        }\n' +
+'\n' +
+'        private MotionResult CheckPort(string kind, int index, int max)\n' +
+'        {\n' +
+'            if (index < 0 || index > max) return MotionResult.Fail(-8, kind + " index " + index + " out of range 0-" + max);\n' +
+'            return MotionResult.Success();\n' +
+'        }\n' +
+'\n' +
 '        private AxisSim GetAxis(int axis)\n' +
 '        {\n' +
 '            AxisSim a;\n' +
@@ -678,11 +712,19 @@ cases +
 '                // 2. 工艺流程\n' +
 '                RunProcess(c);\n' +
 '\n' +
+'                // 2.5 行为断言自检（接缝3 共享评测集 BEH-01/03/04/07/09/14/15）\n' +
+'                BehaviorSelfCheck(c);\n' +
+'\n' +
 '                // 3. SPC 统计（JD职责8: 数据采集 SPC 统计）\n' +
 '                SpcReport(c);\n' +
 '\n' +
 '                Console.WriteLine("RESULT: PASS - 流程完成，报告见 glue_report.csv");\n' +
 '                return 0;\n' +
+'            }\n' +
+'            catch (Exception ex)\n' +
+'            {\n' +
+'                Console.WriteLine("RESULT: FAIL - " + ex.Message);\n' +
+'                return 1;\n' +
 '            }\n' +
 '            finally\n' +
 '            {\n' +
@@ -727,6 +769,85 @@ cases +
 '            double fbForce = c.GetAi(0);\n' +
 '            Console.WriteLine("[FORCE] setpoint=1.25V feedback={0:F3}V", fbForce);\n' +
 '            Check(c.SetAo(0, 0.0), "force release");\n' +
+'\n' +
+'            // ---- [接缝3·BEH-08] 参数守卫自检：越界轴号/端口必须显式拒绝，不许沉默 ----\n' +
+'            MotionResult badMove = c.MoveTo(99, 1.0, fast, MoveMode.Absolute);\n' +
+'            if (badMove.Ok) throw new Exception("FAIL at axis-guard: 越界轴号 MoveTo(99) 被沉默接受");\n' +
+'            Console.WriteLine("[SELFCHECK] MoveTo(99) -> " + badMove);\n' +
+'            bool threw = false;\n' +
+'            try { c.GetCommandPos(99); } catch (ArgumentOutOfRangeException) { threw = true; }\n' +
+'            if (!threw) throw new Exception("FAIL at axis-guard: 读数方法越界未抛 ArgumentOutOfRangeException");\n' +
+'            MotionResult badDo = c.SetDo(999, true);\n' +
+'            if (badDo.Ok) throw new Exception("FAIL at axis-guard: 越界 DO 端口 SetDo(999) 被沉默接受");\n' +
+'            MotionResult badAo = c.SetAo(99, 1.0);\n' +
+'            if (badAo.Ok) throw new Exception("FAIL at axis-guard: 越界 AO 端口 SetAo(99) 被沉默接受");\n' +
+'            Console.WriteLine("[SELFCHECK] axis/port guard OK —— 越界轴号与端口全部显式拒绝 (BEH-08)");\n' +
+'        }\n' +
+'\n' +
+'        // ---- [接缝3] 行为断言自检：shared_eval.json BEH-01/03/04/07/09/14/15 ----\n' +
+'        static void BehaviorSelfCheck(IMotionController c)\n' +
+'        {\n' +
+'            MoveParams bv = new MoveParams(); bv.Vel = 50; bv.Acc = 500;\n' +
+'\n' +
+'            // [BEH-07] 非法脉冲当量必须显式拒绝（错误码风格）\n' +
+'            AxisConfig badScale = new AxisConfig();\n' +
+'            badScale.AxisIndex = 7; badScale.PulsesPerUnit = 0;\n' +
+'            MotionResult rScale = c.ConfigureAxis(badScale);\n' +
+'            if (rScale.Ok) throw new Exception("FAIL at BEH-07: PulsesPerUnit=0 被沉默接受");\n' +
+'            Console.WriteLine("[BEH-07] PulsesPerUnit=0 -> " + rScale + " 拒绝 OK");\n' +
+'\n' +
+'            // [BEH-04] 单位口径：到位准确且指令/反馈同口径\n' +
+'            Check(c.MoveTo(0, 10.0, bv, MoveMode.Absolute), "BEH-04 move");\n' +
+'            Check(c.WaitMoveDone(0, 10000), "BEH-04 wait");\n' +
+'            double cmd = c.GetCommandPos(0), fb = c.GetFeedbackPos(0);\n' +
+'            if (Math.Abs(cmd - 10.0) >= 0.001) throw new Exception("FAIL at BEH-04: 指令位置应为 10.0，实际 " + cmd.ToString("F6"));\n' +
+'            if (Math.Abs(cmd - fb) > 0.05) throw new Exception("FAIL at BEH-04: 指令/反馈口径不一致 cmd=" + cmd.ToString("F6") + " fb=" + fb.ToString("F6"));\n' +
+'            Console.WriteLine("[BEH-04] cmd={0:F3} fb={1:F6} 口径一致 OK", cmd, fb);\n' +
+'\n' +
+'            // [BEH-14] 相对定位增量正确：10 + rel(5) = 15\n' +
+'            Check(c.MoveTo(0, 5.0, bv, MoveMode.Relative), "BEH-14 move rel");\n' +
+'            Check(c.WaitMoveDone(0, 10000), "BEH-14 wait");\n' +
+'            double p15 = c.GetCommandPos(0);\n' +
+'            if (Math.Abs(p15 - 15.0) >= 0.001) throw new Exception("FAIL at BEH-14: 10+5 应为 15.0，实际 " + p15.ToString("F6"));\n' +
+'            Console.WriteLine("[BEH-14] 10 + rel(5) = {0:F3} OK", p15);\n' +
+'\n' +
+'            // [BEH-01] 跟随误差必须非零（抓假反馈）：运动中持续采样\n' +
+'            Check(c.MoveTo(0, 60.0, bv, MoveMode.Absolute), "BEH-01 move far");\n' +
+'            double maxErr = 0.0;\n' +
+'            while ((c.GetState(0) & AxisState.Moving) == AxisState.Moving)\n' +
+'            {\n' +
+'                double e = Math.Abs(c.GetCommandPos(0) - c.GetFeedbackPos(0));\n' +
+'                if (e > maxErr) maxErr = e;\n' +
+'            }\n' +
+'            if (maxErr < 0.0001) throw new Exception("FAIL at BEH-01: 运动中跟随误差恒为 0——反馈是假数据（指令副本）");\n' +
+'            Console.WriteLine("[BEH-01] 运动中最大跟随误差 = {0:F6} 非零 OK", maxErr);\n' +
+'            Check(c.WaitMoveDone(0, 10000), "BEH-01 settle");\n' +
+'\n' +
+'            // [BEH-03] 点动方向必须与速度符号一致\n' +
+'            double j0 = c.GetCommandPos(0);\n' +
+'            Check(c.MoveJog(0, 10.0, bv), "BEH-03 jog+");\n' +
+'            Check(c.WaitMoveDone(0, 5000), "BEH-03 jog+ wait");\n' +
+'            double j1 = c.GetCommandPos(0);\n' +
+'            if (j1 <= j0) throw new Exception("FAIL at BEH-03: 正速度点动后位置必须增加 " + j0.ToString("F3") + " -> " + j1.ToString("F3"));\n' +
+'            Check(c.MoveJog(0, -10.0, bv), "BEH-03 jog-");\n' +
+'            Check(c.WaitMoveDone(0, 5000), "BEH-03 jog- wait");\n' +
+'            double j2 = c.GetCommandPos(0);\n' +
+'            if (j2 >= j1) throw new Exception("FAIL at BEH-03: 负速度点动后位置必须减少 " + j1.ToString("F3") + " -> " + j2.ToString("F3"));\n' +
+'            Console.WriteLine("[BEH-03] jog +10 -> {0:F3}，-10 -> {1:F3} 方向一致 OK", j1, j2);\n' +
+'\n' +
+'            // [BEH-09] 停止后不再处于运动中\n' +
+'            Check(c.MoveTo(0, 400.0, bv, MoveMode.Absolute), "BEH-09 move far");\n' +
+'            Check(c.Stop(0, true), "BEH-09 emergency stop");\n' +
+'            if ((c.GetState(0) & AxisState.Moving) == AxisState.Moving)\n' +
+'                throw new Exception("FAIL at BEH-09: 紧急停止后仍处于运动中");\n' +
+'            Console.WriteLine("[BEH-09] 紧急停止后 Moving=0 OK");\n' +
+'\n' +
+'            // [BEH-15] 回零后位置归零（回零是工件坐标的基准）\n' +
+'            Check(c.Home(0), "BEH-15 home");\n' +
+'            Check(c.WaitHomeDone(0, 30000), "BEH-15 home wait");\n' +
+'            double h = c.GetCommandPos(0);\n' +
+'            if (Math.Abs(h) >= 0.001) throw new Exception("FAIL at BEH-15: 回零后位置应为 0，实际 " + h.ToString("F6"));\n' +
+'            Console.WriteLine("[BEH-15] 回零后位置 = {0:F6} 归零 OK", h);\n' +
 '        }\n' +
 '\n' +
 '        static void SpcReport(IMotionController c)\n' +

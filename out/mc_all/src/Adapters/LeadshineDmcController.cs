@@ -1,6 +1,6 @@
 // =====================================================================
 //  雷赛 DMC/EMC 系列 (LTDMC) 适配器（LTDMC.dll）
-//  生成工具: 上位机代码工厂 v1.0 | 2026-10-20 09:11:42
+//  生成工具: 上位机代码工厂 v1.0 | 2026-10-22 12:00:23
 //  KB级别: B —— 核心API已映射(board/点位/停止/位置/IO/模拟量)。函数名与参数表已按官方C#绑定/C头文件核对；官方无软件使能接口(脉冲卡硬线使能)，使能项标注未实现。
 //  上真机前按 docs/ApiChecklist.md 核对签名（标注 [核对] 处）
 // =====================================================================
@@ -45,38 +45,77 @@ namespace MotionControl.Adapters.Leadshine
         public bool IsOpen { get { return _open; } }
 
         #region 厂商 API 导入（[核对] = 签名需按手册确认）
+        // ── 真值链（每条 P/Invoke 上方：[ 源 | 核对 | 提取 ]）──
+        //   数据源：mcopilot knowledge/sdks/dmc.json（生成时实时读取，非复制）
+        //   源=verified 这条结论从哪来 ｜ 核对=check 验到哪一步 ｜ 提取=extraction 签名对≠调用对时是否需人签字
+        //   本套件 P/Invoke 16 条：知识库钉扎 13 / 未收录(显式降级) 3
+        //   核对进度（钉扎条目）：manual 0 / hardware 0 / auto 0 / none 13
+        //   ⚠ 未核对 13 条：dmc_board_init, dmc_board_close, dmc_pmove, dmc_set_profile, dmc_stop, dmc_check_done, dmc_get_position, dmc_get_encoder, dmc_vmove, dmc_home_move, dmc_set_homemode, dmc_read_inbit, dmc_write_outbit —— 已标 TODO，不许当事实用
+        //   复核：mcopilot 仓库跑 scripts/annotate_provenance.py --check；重新生成本套件即自动继承最新口径
 
         // [真值] 函数名/参数表取自 leisai.csv(官方C#绑定) 与 leisai_cpp.csv(官方C头文件)，并已对 dll_exports.csv(PE导出表) 校验
+        // TODO[需核对厂商手册] dmc_board_init —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_board_init();
+        // TODO[需核对厂商手册] dmc_board_close —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_board_close();
+        // TODO[需核对厂商手册] dmc_pmove —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_pmove(ushort card, ushort axis, int dist, ushort posi_mode);
+        // TODO[需核对厂商手册] dmc_set_profile —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_set_profile(ushort card, ushort axis, double minVel, double maxVel, double tacc, double tdec, double stopVel);
+        // TODO[需核对厂商手册] dmc_stop —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_stop(ushort card, ushort axis, ushort stopMode);
+        // TODO[需核对厂商手册] dmc_check_done —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_check_done(ushort card, ushort axis);
+        // TODO[需核对厂商手册] dmc_get_position —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int dmc_get_position(ushort card, ushort axis);
+        // TODO[需核对厂商手册] dmc_get_encoder —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern int dmc_get_encoder(ushort card, ushort axis);
+        // TODO[需核对厂商手册] dmc_vmove —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-manual | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_vmove(ushort card, ushort axis, ushort dir);
+        // [ 源 未标注 | 核对 none | 提取 judgment ]  mcopilot 知识库未收录此函数
+        // TODO[需核对厂商手册] dmc_change_speed：签名未经外部真值钉扎 —— 按官方 C# 绑定逐字核对后再用
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_change_speed(ushort card, ushort axis, double currVel, double taccdec);
+        // TODO[需核对厂商手册] dmc_home_move —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_home_move(ushort card, ushort axis);
+        // TODO[需核对厂商手册] dmc_set_homemode —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-manual | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_set_homemode(ushort card, ushort axis, ushort homeDir, double vel, ushort mode, ushort ezCount);
+        // TODO[需核对厂商手册] dmc_read_inbit —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_read_inbit(ushort card, ushort bitno);
+        // TODO[需核对厂商手册] dmc_write_outbit —— 核对后更新 mcopilot 仓库 knowledge/sdks/dmc.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 public-doc | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_write_outbit(ushort card, ushort bitno, ushort onOff);
+        // [ 源 未标注 | 核对 none | 提取 judgment ]  mcopilot 知识库未收录此函数
+        // TODO[需核对厂商手册] dmc_get_ad_input：签名未经外部真值钉扎 —— 按官方 C# 绑定逐字核对后再用
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_get_ad_input(ushort card, ushort channel, ref double vout);
+        // [ 源 未标注 | 核对 none | 提取 judgment ]  mcopilot 知识库未收录此函数
+        // TODO[需核对厂商手册] dmc_set_da_output：签名未经外部真值钉扎 —— 按官方 C# 绑定逐字核对后再用
         [DllImport("LTDMC.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short dmc_set_da_output(ushort card, ushort channel, double vout);
         #endregion

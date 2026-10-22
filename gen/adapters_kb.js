@@ -1,8 +1,8 @@
 // adapters_kb.js - 品牌知识库: 固高GTS / 雷赛LTDMC / 正运动ZMC / ACS / 骨架(软赢,高川)
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) { module.exports = factory(require('./adapter_common.js')); }
-  else { root.MCKb = factory(root.MCAdapterCommon); }
-})(typeof self !== 'undefined' ? self : this, function (common) {
+  if (typeof module === 'object' && module.exports) { module.exports = factory(require('./adapter_common.js'), require('./truth_kb.js')); }
+  else { root.MCKb = factory(root.MCAdapterCommon, root.MCTruth); }
+})(typeof self !== 'undefined' ? self : this, function (common, truth) {
 
   var B = common.buildAdapter;
 
@@ -861,6 +861,7 @@
 
   function buildFile(id) {
     var kb = all[id];
+    truth.decorate(kb);   // 真值链接缝：生成时从 mcopilot 知识库逐条标注 P/Invoke（幂等，只装饰一次）
     var content = B(kb);
     // 附加品牌自定义辅助方法（插入到 CheckRange 之前，保持类内位置）
     if (kb.extraMethods) {
