@@ -1,7 +1,7 @@
 # docs/TruthChain.md — P/Invoke 真值链审计
 
 > 数据源：mcopilot 仓库 `knowledge/sdks/{dmc,gts,zmotion}.json`（生成时实时读取，非复制）
-> 根目录：C:\Users\admin\.minimax\sessions\mvs_838bec01bb00476594f48711e6b172d0\workspace\mcopilot　|　生成时间：2026-10-20 11:35:37
+> 根目录：D:\workspace\mcopilot　|　生成时间：2026-10-22 12:10:22
 
 **三根轴**：源 = verified（这条结论从哪来）｜核对 = check（验到哪一步：manual 人工 / hardware 真机 / auto 机器比对 / none 未核对）｜提取 = extraction（签名对是否等于调用对；judgment = 有语义陷阱，必须人签字）。
 

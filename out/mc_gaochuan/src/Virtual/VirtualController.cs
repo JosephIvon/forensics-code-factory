@@ -75,6 +75,8 @@ namespace MotionControl.Virtual
             lock (_lock)
             {
                 if (cfg == null) return MotionResult.Fail(-6, "null config");
+                MotionResult gCfg = CheckAxis(cfg.AxisIndex); if (!gCfg.Ok) return gCfg;
+                if (cfg.PulsesPerUnit <= 0) return MotionResult.Fail(-9, "PulsesPerUnit must be > 0, got " + cfg.PulsesPerUnit);
                 AxisSim a = GetAxis(cfg.AxisIndex);
                 a.HomeOffset = cfg.Home.Offset;
                 return MotionResult.Success("axis " + cfg + " configured (virtual)");
@@ -86,6 +88,7 @@ namespace MotionControl.Virtual
             lock (_lock)
             {
                 if (!_open) return MotionResult.Fail(-1, "not open");
+                MotionResult g = CheckAxis(axis); if (!g.Ok) return g;
                 AxisSim a = GetAxis(axis);
                 a.Enabled = on;
                 return MotionResult.Success();
@@ -124,8 +127,10 @@ namespace MotionControl.Virtual
             lock (_lock)
             {
                 if (!_open) return MotionResult.Fail(-1, "not open");
+                MotionResult g = CheckAxis(axis); if (!g.Ok) return g;
                 AxisSim a = GetAxis(axis);
                 a.Homing = true;
+                a.Homed = false; // [接缝3·BEH-15] 回零进行中不算已回零：不清此标志，WaitHomeDone 对已回零轴立即返回，重回零根本没等（行为断言抓到的真 bug）
                 a.HomeStart = DateTime.Now;
                 return MotionResult.Success("homing started (virtual, ~1.2s)");
             }
@@ -135,6 +140,7 @@ namespace MotionControl.Virtual
 
         public MotionResult WaitHomeDone(int axis, int timeoutMs)
         {
+            MotionResult g0 = CheckAxis(axis); if (!g0.Ok) return g0;
             DateTime t0 = DateTime.Now;
             while ((DateTime.Now - t0).TotalMilliseconds < timeoutMs)
             {
@@ -154,6 +160,7 @@ namespace MotionControl.Virtual
             lock (_lock)
             {
                 if (!_open) return MotionResult.Fail(-1, "not open");
+                MotionResult g = CheckAxis(axis); if (!g.Ok) return g;
                 double from = GetAxis(axis).CmdPos;
                 double to = (mode == MoveMode.Absolute) ? posUser : from + posUser;
                 EnqueueSegment(new int[] { axis }, new double[] { to }, p);
@@ -166,6 +173,7 @@ namespace MotionControl.Virtual
             lock (_lock)
             {
                 if (!_open) return MotionResult.Fail(-1, "not open");
+                MotionResult g = CheckAxis(axis); if (!g.Ok) return g;
                 // 虚拟点动: 以 1 秒为目标步进的持续运动
                 double to = GetAxis(axis).CmdPos + velUserPerSec * 1.0;
                 MoveParams pj = new MoveParams();
@@ -179,6 +187,7 @@ namespace MotionControl.Virtual
         {
             lock (_lock)
             {
+                MotionResult g = CheckAxis(axis); if (!g.Ok) return g;
                 _queue.Clear();
                 AxisSim a = GetAxis(axis);
                 a.Moving = false;
@@ -188,6 +197,7 @@ namespace MotionControl.Virtual
 
         public MotionResult WaitMoveDone(int axis, int timeoutMs)
         {
+            MotionResult g0 = CheckAxis(axis); if (!g0.Ok) return g0;
             DateTime t0 = DateTime.Now;
             while ((DateTime.Now - t0).TotalMilliseconds < timeoutMs)
             {
@@ -208,6 +218,7 @@ namespace MotionControl.Virtual
                 if (!_open) return MotionResult.Fail(-1, "not open");
                 if (axisList == null || targetUser == null || axisList.Length != targetUser.Length)
                     return MotionResult.Fail(-4, "axisList/targetUser length mismatch");
+                for (int gi = 0; gi < axisList.Length; gi++) { MotionResult gL = CheckAxis(axisList[gi]); if (!gL.Ok) return gL; }
                 double[] to = new double[axisList.Length];
                 double distSq = 0;
                 for (int i = 0; i < axisList.Length; i++)
@@ -226,6 +237,8 @@ namespace MotionControl.Virtual
             lock (_lock)
             {
                 if (!_open) return MotionResult.Fail(-1, "not open");
+                MotionResult gX = CheckAxis(axisX); if (!gX.Ok) return gX;
+                MotionResult gY = CheckAxis(axisY); if (!gY.Ok) return gY;
                 double x0 = GetAxis(axisX).CmdPos, y0 = GetAxis(axisY).CmdPos;
                 double cx = x0 + i, cy = y0 + j;
                 double r = Math.Sqrt(i * i + j * j);
@@ -255,13 +268,14 @@ namespace MotionControl.Virtual
 
         public MotionResult SetDo(int index, bool on)
         {
-            lock (_lock) { _doMap[index] = on; return MotionResult.Success("DO" + index + "=" + on); }
+            lock (_lock) { MotionResult gP = CheckPort("DO", index, DO_MAX); if (!gP.Ok) return gP; _doMap[index] = on; return MotionResult.Success("DO" + index + "=" + on); }
         }
 
         public bool GetDi(int index)
         {
             lock (_lock)
             {
+                if (index < 0 || index > DI_MAX) throw new ArgumentOutOfRangeException("index", index, "DI 0-" + DI_MAX);
                 double t = (DateTime.Now - _boot).TotalSeconds;
                 // 周期性翻转的虚拟 DI（周期~10s/位错开），保证 WaitDi 可被满足
                 return Math.Sin(t * 0.6 + index * 1.7) > 0;
@@ -272,6 +286,7 @@ namespace MotionControl.Virtual
         {
             lock (_lock)
             {
+                if (index < 0 || index > AI_MAX) throw new ArgumentOutOfRangeException("index", index, "AI 0-" + AI_MAX);
                 double t = (DateTime.Now - _boot).TotalSeconds;
                 // 2.5V +/-0.08V 正弦 + 10mV 噪声 —— 模拟压力/胶量传感器
                 return 2.5 + 0.08 * Math.Sin(t * 2.0 + index * 0.7) + (_rnd.NextDouble() - 0.5) * 0.02;
@@ -280,11 +295,12 @@ namespace MotionControl.Virtual
 
         public MotionResult SetAo(int index, double volts)
         {
-            lock (_lock) { _aoMap[index] = volts; return MotionResult.Success("AO" + index + "=" + volts); }
+            lock (_lock) { MotionResult gA = CheckPort("AO", index, AO_MAX); if (!gA.Ok) return gA; _aoMap[index] = volts; return MotionResult.Success("AO" + index + "=" + volts); }
         }
 
         public MotionResult WaitDi(int index, bool level, int timeoutMs)
         {
+            MotionResult gW = CheckPort("DI", index, DI_MAX); if (!gW.Ok) return gW;
             DateTime t0 = DateTime.Now;
             while ((DateTime.Now - t0).TotalMilliseconds < timeoutMs)
             {
@@ -295,6 +311,24 @@ namespace MotionControl.Virtual
         }
 
         // ---------------- 内部: 惰性推进仿真 ----------------
+        // ---- [接缝3·BEH-08] 参数守卫 ----
+        // 返回 MotionResult 的方法：越界必须返回 Fail（错误码风格，与本套件一致），
+        // 不许靠深处异常冒泡、更不许沉默接受。真机适配器抄这里时必须保留同语义校验——
+        // 越界轴号在真机上是非法内存访问（栈损坏级）。
+        private const int AXIS_MAX = 7, DI_MAX = 15, DO_MAX = 15, AI_MAX = 7, AO_MAX = 7;
+
+        private MotionResult CheckAxis(int axis)
+        {
+            if (axis < 0 || axis > AXIS_MAX) return MotionResult.Fail(-7, "axis " + axis + " out of range 0-" + AXIS_MAX);
+            return MotionResult.Success();
+        }
+
+        private MotionResult CheckPort(string kind, int index, int max)
+        {
+            if (index < 0 || index > max) return MotionResult.Fail(-8, kind + " index " + index + " out of range 0-" + max);
+            return MotionResult.Success();
+        }
+
         private AxisSim GetAxis(int axis)
         {
             AxisSim a;

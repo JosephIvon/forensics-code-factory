@@ -1,6 +1,6 @@
 // =====================================================================
 //  固高 GTS/GTN 系列 适配器（gts.dll）
-//  生成工具: 上位机代码工厂 v1.0 | 2026-10-20 12:43:08
+//  生成工具: 上位机代码工厂 v1.0 | 2026-10-22 12:10:22
 //  KB级别: B —— 核心API已映射(Open/使能/回零/点位/IO/位置)。函数名、参数表与结构体字段顺序已按官方C#绑定/C头文件逐条核对；回零改用官方标准回零接口(GT_GetStandardHomePrm/GT_ExecuteStandardHome)。【重要】本套件的 gts.dll 绑定是【单卡库】口径(首参是通道号)；固高 SDK 的多卡库 DLL 同样叫 gts.dll、导出名完全相同，但每个 API 多一个 cardNum 首参——混用会让参数整体错位。插多张卡时必须改用多卡库签名，或用 GT_SetCardNo 逐卡切换。
 //  上真机前按 docs/ApiChecklist.md 核对签名（标注 [核对] 处）
 // =====================================================================
@@ -48,9 +48,9 @@ namespace MotionControl.Adapters.Googol
         // ── 真值链（每条 P/Invoke 上方：[ 源 | 核对 | 提取 ]）──
         //   数据源：mcopilot knowledge/sdks/gts.json（生成时实时读取，非复制）
         //   源=verified 这条结论从哪来 ｜ 核对=check 验到哪一步 ｜ 提取=extraction 签名对≠调用对时是否需人签字
-        //   本套件 P/Invoke 22 条：知识库钉扎 20 / 未收录(显式降级) 2
-        //   核对进度（钉扎条目）：manual 20 / hardware 0 / auto 0 / none 0
-        //   ⚠ 未核对 2 条：GT_GetStandardHomePrm, GT_ExecuteStandardHome —— 已标 TODO，不许当事实用
+        //   本套件 P/Invoke 22 条：知识库钉扎 19 / 未收录(显式降级) 3
+        //   核对进度（钉扎条目）：manual 0 / hardware 0 / auto 0 / none 19
+        //   ⚠ 未核对 19 条：GT_Open, GT_Close, GT_Reset, GT_LoadConfig, GT_ClrSts, GT_AxisOn, GT_AxisOff, GT_Stop, GT_SetPos, GT_SetVel, GT_Update, GT_PrfTrap, GT_SetTrapPrm, GT_PrfJog, GT_SetJogPrm, GT_GetSts, GT_GetPrfPos, GT_GetDi, GT_SetDoBit —— 已标 TODO，不许当事实用
         //   复核：mcopilot 仓库跑 scripts/annotate_provenance.py --check；重新生成本套件即自动继承最新口径
 
         // [真值] 函数名/参数表取自 gts.csv(官方C#绑定) 与 gts_hdr.csv(官方C头文件)，并已对 dll_exports.csv(PE导出表) 校验
@@ -59,49 +59,64 @@ namespace MotionControl.Adapters.Googol
         //        (例：GT_Open 単卡(short channel, short param) vs 多卡(short cardNum, short channel, short param))。
         //        两者混用 → 参数整体错位 → 打开到错误的卡/参数全乱，且不抛异常。
         //        插多张卡时：改用多卡库签名，或用 GT_SetCardNo 逐卡切换。
-        // [ 源 official-binding | 核对 manual | 提取 mechanical ]  gts.cs:406 · 手册 P.211 · 导出表✓
+        // TODO[需核对厂商手册] GT_Open —— 核对后更新 mcopilot 仓库 knowledge/sdks/gts.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_Open(short channel, short param);
-        // [ 源 official-binding | 核对 manual | 提取 mechanical ]  gts.cs:408 · 手册 P.174 · 导出表✓
+        // TODO[需核对厂商手册] GT_Close —— 核对后更新 mcopilot 仓库 knowledge/sdks/gts.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_Close();
-        // [ 源 official-binding | 核对 manual | 提取 mechanical ]  gts.cs:541 · 手册 P.212 · 导出表✓
+        // TODO[需核对厂商手册] GT_Reset —— 核对后更新 mcopilot 仓库 knowledge/sdks/gts.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_Reset();
-        // [ 源 official-binding | 核对 manual | 提取 judgment ]  gts.cs:411 · 手册 P.210 · 导出表✓
+        // TODO[需核对厂商手册] GT_LoadConfig —— 核对后更新 mcopilot 仓库 knowledge/sdks/gts.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall, CharSet = CharSet.Ansi)]
         private static extern short GT_LoadConfig([MarshalAs(UnmanagedType.LPStr)] string pFile);
-        // [ 源 official-binding | 核对 manual | 提取 mechanical ]  gts.cs:550 · 手册 P.174 · 导出表✓
+        // TODO[需核对厂商手册] GT_ClrSts —— 核对后更新 mcopilot 仓库 knowledge/sdks/gts.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_ClrSts(short axis, short count);
-        // [ 源 official-binding | 核对 manual | 提取 judgment ]  gts.cs:552 · 手册 P.169 · 导出表✓
+        // TODO[需核对厂商手册] GT_AxisOn —— 核对后更新 mcopilot 仓库 knowledge/sdks/gts.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_AxisOn(short axis);
-        // [ 源 official-binding | 核对 manual | 提取 judgment ]  gts.cs:554 · 手册 P.169 · 导出表✓
+        // TODO[需核对厂商手册] GT_AxisOff —— 核对后更新 mcopilot 仓库 knowledge/sdks/gts.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_AxisOff(short axis);
-        // [ 源 official-binding | 核对 manual | 提取 judgment ]  gts.cs:556 · 手册 P.229 · 导出表✓
+        // TODO[需核对厂商手册] GT_Stop —— 核对后更新 mcopilot 仓库 knowledge/sdks/gts.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_Stop(int mask, int option);
-        // [ 源 official-binding | 核对 manual | 提取 judgment ]  gts.cs:645 · 手册 P.224 · 导出表✓
+        // TODO[需核对厂商手册] GT_SetPos —— 核对后更新 mcopilot 仓库 knowledge/sdks/gts.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_SetPos(short profile, int pos);
-        // [ 源 official-binding | 核对 manual | 提取 judgment ]  gts.cs:649 · 手册 P.228 · 导出表✓
+        // TODO[需核对厂商手册] GT_SetVel —— 核对后更新 mcopilot 仓库 knowledge/sdks/gts.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_SetVel(short profile, double vel);
-        // [ 源 official-binding | 核对 manual | 提取 judgment ]  gts.cs:643 · 手册 P.231 · 导出表✓
+        // TODO[需核对厂商手册] GT_Update —— 核对后更新 mcopilot 仓库 knowledge/sdks/gts.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_Update(int mask);
-        // [ 源 official-binding | 核对 manual | 提取 judgment ]  gts.cs:654 · 手册 P.212 · 导出表✓
+        // TODO[需核对厂商手册] GT_PrfTrap —— 核对后更新 mcopilot 仓库 knowledge/sdks/gts.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_PrfTrap(short profile);
-        // [ 源 official-binding | 核对 manual | 提取 judgment ]  gts.cs:656 · 手册 P.226 · 导出表✓
+        // TODO[需核对厂商手册] GT_SetTrapPrm —— 核对后更新 mcopilot 仓库 knowledge/sdks/gts.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_SetTrapPrm(short profile, ref TTrapPrm pPrm);
-        // [ 源 official-binding | 核对 manual | 提取 judgment ]  gts.cs:661 · 手册 P.212 · 导出表✓
+        // TODO[需核对厂商手册] GT_PrfJog —— 核对后更新 mcopilot 仓库 knowledge/sdks/gts.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_PrfJog(short profile);
-        // [ 源 official-binding | 核对 manual | 提取 judgment ]  gts.cs:663 · 手册 P.222 · 导出表✓
+        // TODO[需核对厂商手册] GT_SetJogPrm —— 核对后更新 mcopilot 仓库 knowledge/sdks/gts.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_SetJogPrm(short profile, ref TJogPrm pPrm);
         // [ 源 未标注 | 核对 none | 提取 judgment ]  mcopilot 知识库未收录此函数
@@ -112,19 +127,24 @@ namespace MotionControl.Adapters.Googol
         // TODO[需核对厂商手册] GT_ExecuteStandardHome：签名未经外部真值钉扎 —— 按官方 C# 绑定逐字核对后再用
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_ExecuteStandardHome(short axis, ref TStandardHomePrm pHomePrm);
-        // [ 源 official-binding | 核对 manual | 提取 judgment ]  gts.cs:548 · 手册 P.201 · 导出表✓
+        // TODO[需核对厂商手册] GT_GetSts —— 核对后更新 mcopilot 仓库 knowledge/sdks/gts.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_GetSts(short axis, out int pSts, short count, out uint pClock);
-        // [ 源 official-binding | 核对 manual | 提取 judgment ]  gts.cs:595 · 手册 P.199 · 导出表✓
+        // TODO[需核对厂商手册] GT_GetPrfPos —— 核对后更新 mcopilot 仓库 knowledge/sdks/gts.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_GetPrfPos(short profile, out double pValue, short count, out uint pClock);
-        // [ 源 official-binding | 核对 manual | 提取 mechanical ]  gts.cs:509 · 手册 P.192 · 导出表✓
+        // [ 源 未标注 | 核对 none | 提取 judgment ]  mcopilot 知识库未收录此函数
+        // TODO[需核对厂商手册] GT_GetEncPos：签名未经外部真值钉扎 —— 按官方 C# 绑定逐字核对后再用
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_GetEncPos(short encoder, out double pValue, short count, out uint pClock);
-        // [ 源 official-binding | 核对 manual | 提取 judgment ]  gts.cs:488 · 手册 P.191 · 导出表✓
+        // TODO[需核对厂商手册] GT_GetDi —— 核对后更新 mcopilot 仓库 knowledge/sdks/gts.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_GetDi(short diType, out int pValue);
-        // [ 源 official-binding | 核对 manual | 提取 judgment ]  gts.cs:475 · 手册 P.219 · 导出表✓
+        // TODO[需核对厂商手册] GT_SetDoBit —— 核对后更新 mcopilot 仓库 knowledge/sdks/gts.json 并重跑 scripts/annotate_provenance.py --check，然后重新生成本套件
+        // [ 源 official-binding | 核对 none | 提取 judgment ]  导出表无背书
         [DllImport("gts.dll", CallingConvention = CallingConvention.StdCall)]
         private static extern short GT_SetDoBit(short doType, short doIndex, short value);
 
