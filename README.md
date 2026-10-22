@@ -67,7 +67,8 @@ out/mc_<brand>/
 ```
 
 `out_v_unique/` 是**去重后的补充件**（各品牌独有、不重复的部分）✓，
-多出 `bin/GlueDemo.exe`、`docs/tech-debt.md`、`glue_report.csv` 这几样 ✓。
+多出 `bin/GlueDemo.exe`、`out_v_unique/mc_all/docs/tech-debt.md`、
+`glue_report.csv` 这几样 ✓。
 
 ---
 
@@ -109,8 +110,9 @@ out/mc_<brand>/
 2. **软赢 / 高川是骨架** ✓ —— 0 条 P/Invoke，接口形态待厂商手册核对 ✓。
 3. **ACS 需要厂商 DLL** ✓ —— 不在全品牌套件内 ✓。
 4. **知识库不可达时整体降级** ✓ —— 生成不中断，但产物里的 P/Invoke 全部按未标注处理 ✓。
-5. **共享评测集（接缝 3）尚未闭合** ✓ —— mcopilot 侧的 `knowledge/shared_eval.json`
-   当前**未入库** ✓，因此 `docs/JointEval.md` 里只有工厂侧的断言，没有 mcopilot 侧对照行 ✓。
+5. **共享评测集（接缝 3）尚未闭合** ✓ —— mcopilot 侧的
+   `knowledge/shared_eval.json`（**在 mcopilot 仓，不在本仓** ✓）当前**未入库** ✓，
+   因此 `out/mc_<brand>/docs/JointEval.md` 里只有工厂侧的断言，没有 mcopilot 侧对照行 ✓。
 6. **能力矩阵基于厂商公开手册常识与行业经验** ✓ —— 产物里原话写着
    "上真机前以官方最新手册为准" ✓。
 

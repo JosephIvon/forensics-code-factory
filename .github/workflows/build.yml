@@ -1,0 +1,52 @@
+name: build
+
+# trae_factory 的 CI 证明两件事：
+#   ① 生成器还能跑（退出码 0）；
+#   ② 单文件交付物与 gen/ 同源（concat 跑完不产生差异）。
+# 第二条是这次公开前审发现的真问题：入库的 html 落后于 gen/，
+# 浏览器里跑的一直是旧代码。有了这条检查，它不会再悄悄漂移。
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: 环境自述
+        run: node --version
+
+      - name: 全品牌套件再生（退出码 0 即通过）
+        run: node test_gen.js all
+
+      - name: 单品牌再生（抽一个品牌验 CLI 入口）
+        run: node test_gen.js gts
+
+      - name: 单文件交付物与 gen/ 同源（concat 后不得有差异）
+        run: |
+          node concat.js
+          if ! git diff --quiet -- '上位机代码工厂.html'; then
+            echo "::error::单文件交付物与 gen/ 不同源——请跑 node concat.js 后一并提交"
+            git diff --stat -- '上位机代码工厂.html'
+            exit 1
+          fi
+          echo "单文件与 gen/ 同源 ✓"
+
+      - name: 产物里不得出现本机绝对路径
+        run: |
+          if grep -rInE '[A-Za-z]:\\' out --include='*.md' | grep -v 'REDACTED_HOST_PATH' ; then
+            echo "::error::产物里出现了本机绝对路径"
+            exit 1
+          fi
+          echo "产物绝对路径 0 处 ✓"

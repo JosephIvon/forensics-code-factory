@@ -17,8 +17,9 @@
 | 厂商原件（PDF / SDK 压缩包） | mcopilot 的**仓外原件区** `../mcopilot-external/vendor_docs/` | 本仓从不接触原件 ✓ |
 
 **读不到怎么办**：知识库不可达时，生成**不中断** ✓，但产物里每条 P/Invoke 都按
-`[源 未标注 | 核对 none | 提取 judgment]` 降级处理 ✓，并在 `docs/TruthChain.md`
-与 `docs/JointEval.md` 里写明"知识库不可达" ✓。
+`[源 未标注 | 核对 none | 提取 judgment]` 降级处理 ✓，并在产物里的
+`out/mc_<brand>/docs/TruthChain.md` 与 `out/mc_<brand>/docs/JointEval.md` 里
+写明"知识库不可达" ✓。
 
 > 纪律：本工厂的知识库**不另设真值副本** ✓——
 > 复制一份就会变成第二个事实源，两个事实源迟早对不上 ✓。
