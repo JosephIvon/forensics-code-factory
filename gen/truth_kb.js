@@ -279,8 +279,12 @@
     catch (e) { return s + '⚠ 共享评测集缺失（mcopilot 仓 `knowledge/shared_eval.json`）——该文件当前未入库，mcopilot 仓更新后重新生成。\n'; }
 
     s += '> 数据源：mcopilot `knowledge/shared_eval.json`（生成时实时读取，非复制）\n';
-    s += '> 实测对照：**断言本体在工厂侧生成代码内**（`[接缝3] BEH-xx` 行为断言自检）；mcopilot 侧的共享评测集文件与对照脚本当前未入库，'
-       + '故本表暂无 mcopilot 侧行——本文件只回答「本套件对哪些行为断言负责」。\n\n';
+    s += '> 实测对照：**断言本体在工厂侧生成代码内**（`[接缝3·BEH-xx]` 行为断言自检 ✓）；'
+       + 'mcopilot 侧的共享评测集（`knowledge/shared_eval.json`）与对照脚本（`scripts/joint_eval.py`）**均已入库** ✓，'
+       + '故本表给出 mcopilot 侧验证点 ✓。\n';
+    s += '> 本表是**注册表**——回答「哪些行为断言、各自由谁负责验」✓；'
+       + '**实测**对照（两侧本次真跑的结果，含 BEH-19 的 SPC 机器比对）在 mcopilot 仓 `out/joint_eval.md` ✓，'
+       + '由 `scripts/joint_eval.py` 生成 ✓。注册表说「谁负责」，实测表说「本次验没验」✓，两者分工不混。\n\n';
     s += '**规则**：工厂端到端 PASS 只有落在共享评测集的断言上才算有背书——';
     s += '空白项（本套件应验未验）是整改清单，n/a 项（接口无此概念）是能力矩阵差异，不许算 FAIL。\n\n';
 

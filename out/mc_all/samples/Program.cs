@@ -10,7 +10,7 @@ namespace Samples
     /// <summary>
     /// 点胶工艺示例（JD职责6: 路径规划/出胶时序/缺胶溢胶判定 + 职责8: SPC统计）
     /// 换卡演示: 只修改 CREATE_BRAND 一行，业务流程零改动（JD职责3 目标）。
-    /// 生成时间: 2026-10-22 16:11:50
+    /// 生成时间: 2026-10-23 09:09:29
     /// </summary>
     public static class Program
     {
@@ -85,28 +85,28 @@ namespace Samples
 
             // ---- 路径1: 矩形三点走胶（IO 时序 = 出胶时序，JD职责6）----
             double[,] rect = new double[,] { { 20, 10 }, { 80, 10 }, { 80, 60 }, { 20, 60 } };
-            Check(c.MoveLine(new int[] { 0, 1 }, new double[] { rect[0, 0], rect[0, 1] }, fast, MoveMode.Absolute), "MoveLine to start");
+            Check(c.MoveLine(new int[] { 0, 1 }, new double[] { rect[0, 0], rect[0, 1] }, fast, MoveMode.Absolute), "[BEH-12] MoveLine to start");
             Check(c.WaitMoveDone(0, 10000), "wait arrive");
             Check(c.MoveTo(2, 0.5, work, MoveMode.Absolute), "Z -> glue height (点胶高度跟随)");
             Check(c.WaitMoveDone(2, 10000), "wait Z");
             for (int i = 1; i < rect.GetLength(0); i++)
             {
                 Check(c.SetDo(GLUE_DO, true), "glue ON");
-                Check(c.MoveLine(new int[] { 0, 1 }, new double[] { rect[i, 0], rect[i, 1] }, work, MoveMode.Absolute), "glue path seg " + i);
+                Check(c.MoveLine(new int[] { 0, 1 }, new double[] { rect[i, 0], rect[i, 1] }, work, MoveMode.Absolute), "[BEH-12] glue path seg " + i);
                 Check(c.WaitMoveDone(0, 30000), "wait seg " + i);
                 Check(c.SetDo(GLUE_DO, false), "glue OFF");
             }
 
             // ---- 路径2: 圆弧转角（JD职责4: 圆弧插补）----
             Check(c.MoveTo(2, Z_SAFE, fast, MoveMode.Absolute), "Z -> safe");
-            Check(c.MoveArc2D(0, 1, 15.0, 0.0, 50.0, 80.0, false, work), "arc");
+            Check(c.MoveArc2D(0, 1, 15.0, 0.0, 50.0, 80.0, false, work), "[BEH-13] arc");
             Check(c.WaitMoveDone(0, 30000), "wait arc");
 
             // ---- IO 互锁等待（吸嘴/治具到位信号，JD职责5 时序）----
-            Check(c.WaitDi(0, true, 15000), "wait fixture ready DI0");
+            Check(c.WaitDi(0, true, 15000), "[BEH-17] wait fixture ready DI0");
 
             // ---- 力控压合演示（JD职责4: 力控压合 -> 模拟量闭环粗调）----
-            Check(c.SetAo(0, 1.25), "force setpoint 1.25V");
+            Check(c.SetAo(0, 1.25), "[BEH-18] force setpoint 1.25V");
             double fbForce = c.GetAi(0);
             Console.WriteLine("[FORCE] setpoint=1.25V feedback={0:F3}V", fbForce);
             Check(c.SetAo(0, 0.0), "force release");
@@ -122,7 +122,8 @@ namespace Samples
             if (badDo.Ok) throw new Exception("FAIL at axis-guard: 越界 DO 端口 SetDo(999) 被沉默接受");
             MotionResult badAo = c.SetAo(99, 1.0);
             if (badAo.Ok) throw new Exception("FAIL at axis-guard: 越界 AO 端口 SetAo(99) 被沉默接受");
-            Console.WriteLine("[SELFCHECK] axis/port guard OK —— 越界轴号与端口全部显式拒绝 (BEH-08)");
+            Console.WriteLine("[SELFCHECK] axis/port guard OK —— 越界轴号与端口全部显式拒绝 [BEH-08]");
+            Console.WriteLine("[BEH-16] 多轴工艺流程端到端完成（走胶 → 圆弧 → DI 互锁 → 力控设定）");
         }
 
         // ---- [接缝3] 行为断言自检：shared_eval.json BEH-01/03/04/07/09/14/15 ----
@@ -204,6 +205,7 @@ namespace Samples
             double cp = sigma > 1e-9 ? (usl - lsl) / (6 * sigma) : 99.0;
             Console.WriteLine("[SPC] n={0} mean={1:F4} sigma={2:F4} Cp={3:F2} Cpk={4:F2}", x.Count, mean, sigma, cp, cpk);
             Console.WriteLine("[SPC] 判定: {0}", cpk >= 1.33 ? "合格 (Cpk>=1.33)" : "需调整工艺参数");
+            Console.WriteLine("[BEH-19] SPC 判定 Cpk={0:F3}（合格线 1.33）→ {1}", cpk, cpk >= 1.33 ? "合格" : "需调整工艺参数");
 
             using (StreamWriter w = new StreamWriter("glue_report.csv"))
             {
