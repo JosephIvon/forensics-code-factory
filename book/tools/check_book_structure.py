@@ -19,6 +19,7 @@ from __future__ import annotations
 import io
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -165,6 +166,38 @@ if wrong_mine or wrong_foreign or unknown:
 else:
     print(f"  ✅ 锚点字符串一致（本仓 {len(set(mine))} 处 @{ANCHOR_COMMIT}"
           f" ｜ 跨仓 {len(set(foreign))} 处，均与 FOREIGN_ANCHORS 一致）")
+
+# ---- 存在性核对：登记表里的提交必须在兄弟仓里**真的存在** ----
+# 只核对「正文 == 登记表」是不够的：两边一起错就查不出来。
+# 本卷就踩过——`mcopilot@01eb884` 同时写在正文与 FOREIGN_ANCHORS 里，
+# 一致、但那个提交在 forensics-mcopilot 里根本不存在（旧工作副本的号）。
+_ws = BOOK.parent.parent
+_missing, _checked, _absent = [], 0, []
+for _name, _sha in sorted(FOREIGN_ANCHORS.items()):
+    _root = None
+    for _cand in (_name, "forensics-" + _name):
+        if (_ws / _cand).is_dir():
+            _root = _ws / _cand
+            break
+    if _root is None:
+        _absent.append(_name)
+        continue
+    _r = subprocess.run(["git", "-C", str(_root), "cat-file", "-t", _sha],
+                        capture_output=True, text=True, errors="replace")
+    _checked += 1
+    if _r.returncode != 0:
+        _missing.append((_name, _sha))
+
+if _missing:
+    bad += 1
+    print("  ❌ 跨仓锚在目标仓里**不存在**（死指针，读者打不开）：")
+    for _name, _sha in _missing:
+        print(f"      {_name}@{_sha}  →  {_name} 仓的 `git cat-file -t` 失败")
+elif _absent:
+    print(f"  · 跨仓锚存在性：{_checked} 个已核 ✓；"
+          f"{'、'.join(_absent)} 不在位，**无法核对**（不是通过）")
+else:
+    print(f"  ✅ 跨仓锚存在性：{_checked} 个全部在目标仓里真的存在")
 
 print("问题章数：", bad)
 sys.exit(1 if bad else 0)
