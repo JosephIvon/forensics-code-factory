@@ -50,3 +50,53 @@ jobs:
             exit 1
           fi
           echo "产物绝对路径 0 处 ✓"
+
+  # ------------------------------------------------------------------ 电子书
+  # 书在 `book/` 里，只存在于书分支上（主分支不带书，理由是让代码仓保持"可跑的最小面"）。
+  # 六道门禁各自独立判退出码——**不许串成一个 shell 块**：那样只有最后一条的退出码
+  # 会被 step 带出来，前面几条红了也照样全绿（axiscope 卷真踩过这个坑）。
+  book:
+    if: github.ref == 'refs/heads/book/forensics-code-factory-ebook'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 坐标审计要 `git show 954c210:<path>`，锚点提交必须在历史里
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 环境自述
+        run: python -c "import sys; print(sys.version); print('exe:', sys.executable)"
+
+      - name: 六道书卷门禁（逐条判退出码）
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          failed=""
+          for s in \
+            book/tools/audit_coords.py \
+            book/tools/check_book_structure.py \
+            book/tools/verify_crops_verbatim.py \
+            book/tools/verify_book_numbers.py \
+            book/tools/scan_absolute_paths.py \
+            book/tools/check_broken_links.py; do
+            echo "--- $s"
+            if ! python "$s"; then failed="$failed $s"; fi
+          done
+          if [ -n "$failed" ]; then
+            echo "::error::书卷门禁有失败：$failed"
+            exit 1
+          fi
+          echo "六道书卷门禁全过 ✓"
+
+      - name: 说明（CI 上没有兄弟仓）
+        run: |
+          echo "CI runner 上没有 axiscope / forensics-mcopilot 这两个兄弟仓，"
+          echo "所以跨仓坐标会记为 [EXTERNAL]（已登记）或「缺仓不可判定」，"
+          echo "自报门禁数字会显式 SKIP —— 这些都在输出里打印，不是静默跳过。"
+

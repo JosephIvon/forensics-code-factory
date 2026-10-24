@@ -271,8 +271,17 @@ def main() -> int:
                         rel, lines = cand, lines
                         break
                 if rel is None:
+                    # 简写解析失败 ≠ 坐标错：它指向的文件可能登记在仓外原件表里
+                    # （`KB7` → axiscope 的 docs/kb/KB7-…），干净克隆上不在位而已。
+                    probe = raw
+                    for cand in ALIAS.get(raw, []):
+                        probe = cand.split(":", 1)[1] if cand.startswith("@") else cand
+                        break
+                    if registered_external(raw) or registered_external(probe):
+                        print(f"  [EXTERNAL] {raw}:{ln}（仓外原件，已登记：指针+size+sha256 留在仓内）")
+                        continue
                     bad += 1
-                    print(f"  [MISSING-FILE] {raw}:{ln}（别名未解析）")
+                    print(f"  [MISSING-FILE] {raw}:{ln}（别名未解析，且未登记为仓外原件）")
                     continue
                 abs_p = os.path.join(str(REPO_ROOT), rel.replace("/", os.sep))
                 label = raw
@@ -281,7 +290,14 @@ def main() -> int:
                 abs_p, lines = resolve(raw)
                 label = raw
                 if lines is None:
-                    if registered_external(raw):
+                    # 简写解析失败时，用它的**目标路径**去查登记表：
+                    # `KB7` → `docs/kb/KB7-dataset-da-rus-cat.md`，那个文件在 axiscope 仓，
+                    # 干净克隆上不在位，但它是登记在册的仓外原件，不是断链。
+                    probe = raw
+                    for cand in ALIAS.get(raw, []):
+                        probe = cand.split(":", 1)[1] if cand.startswith("@") else cand
+                        break
+                    if registered_external(raw) or registered_external(probe):
                         print(f"  [EXTERNAL] {raw}:{ln}（仓外原件，已登记：指针+size+sha256 留在仓内）")
                         continue
                     bad += 1

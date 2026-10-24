@@ -8,7 +8,9 @@
 
 
 
-**全卷合计：24 件 / 3,237 行。**
+
+
+**全卷合计：25 件 / 3,368 行。**
 
 ### 卷首卷尾
 
@@ -46,19 +48,20 @@
 |---|---|
 | `checks.json` | 37 |
 | `known_findings.json` | 23 |
+| `evidence/REGISTRY.json` | 42 |
 
 ### 门禁与工具
 
 | 文件 | 行数 |
 |---|---|
 | `tools/_anchor.py` | 44 |
-| `tools/audit_coords.py` | 338 |
+| `tools/audit_coords.py` | 354 |
 | `tools/build_crops.py` | 208 |
 | `tools/check_book_structure.py` | 170 |
-| `tools/check_broken_links.py` | 254 |
+| `tools/check_broken_links.py` | 313 |
 | `tools/locate.py` | 77 |
 | `tools/scan_absolute_paths.py` | 185 |
-| `tools/verify_book_numbers.py` | 244 |
+| `tools/verify_book_numbers.py` | 255 |
 | `tools/verify_crops_verbatim.py` | 68 |
 
 ### 规格与清单
@@ -72,7 +75,7 @@
 
 | 文件 | 行数 |
 |---|---|
-| `ASSETS.md` | 113 |
+| `ASSETS.md` | 116 |
 ## 二、门禁怎么跑
 
 在**仓根**跑（不需要装依赖，Python 3.9+ 与 git 即可）：

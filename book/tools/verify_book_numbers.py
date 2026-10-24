@@ -153,7 +153,18 @@ def live_gate_numbers() -> tuple[int, int, int, int] | None:
     return None
 
 
-def check_self_numbers(book_texts: dict[str, str]) -> tuple[int, int]:
+def _siblings_present() -> bool:
+    """兄弟仓在不在位——决定自报的门禁数字能不能当场核对。"""
+    ws = BOOK.parent.parent
+    return all((ws / n).is_dir() for n in ("axiscope", "forensics-mcopilot"))
+
+
+def check_self_numbers(book_texts: dict[str, str]) -> tuple[int, int, bool]:
+    if not _siblings_present():
+        # 自报的数字是「兄弟仓在位」时的实跑值。干净克隆上跨仓坐标只能记 EXTERNAL，
+        # 实跑值必然不同——此时**不能核**，但必须喊出来，不能静默算过。
+        print("  [SKIP] 兄弟仓不在位：自报的门禁数字是满环境下的参考值，本环境无法当场核对")
+        return 0, 0, True
     live = live_gate_numbers()
     if live is None:
         print("  [WARN] 坐标审计没跑出合计行，自报数字无法核对")
@@ -178,7 +189,7 @@ def check_self_numbers(book_texts: dict[str, str]) -> tuple[int, int]:
                 print(f"  [MISMATCH] {name}:{line}  自报 {got}，实跑 {live}")
             else:
                 print(f"  [OK] {name}  自报门禁数字与实跑一致：{live}")
-    return checked, bad
+    return checked, bad, False
 
 
 def main() -> int:
@@ -222,13 +233,13 @@ def main() -> int:
         print(f"  资产表与合计：核 {a_checked} 处，{a_bad} 处不符")
 
     # ③ 本卷自报的门禁数字
-    s_checked, s_bad = check_self_numbers(book_texts)
+    s_checked, s_bad, s_skipped = check_self_numbers(book_texts)
     checked += s_checked
     bad += s_bad
     # **匹配到 0 处 = 门失效，不是门通过。**
     # 这一条是本文件自己的护栏：正则一旦与书里的排法脱节，
     # ③ 就会「一个数也没核」却照样全绿——那正是本书 §8.5.2 讲的假绿形状。
-    if s_checked == 0:
+    if s_checked == 0 and not s_skipped:
         print("  [FAIL] 自报门禁数字一处也没匹配到：正则与书里的排法脱节了，"
               "③ 现在是**空转**，不能算通过")
         bad += 1

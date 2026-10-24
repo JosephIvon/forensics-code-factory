@@ -117,6 +117,37 @@ GENERATED = re.compile(r"^out/")
 SIBLING_HINT = re.compile(r"(mcopilot|axiscope|forensics-code-factory|trae_factory)")
 
 
+def _siblings_missing() -> bool:
+    """兄弟仓是否缺位。缺位时找不到的路径归「缺仓不可判定」，不判真断链。"""
+    ws = REPO.parent
+    return not all((ws / n).is_dir() for n in ("axiscope", "forensics-mcopilot"))
+
+
+def _book_relative(ref: str, heads: set[str]) -> bool:
+    """书内相对路径：裁剪件写 `tools/verify_crops_verbatim.py`，实际在 `book/tools/`。"""
+    return f"book/{ref}" in heads
+
+
+def _generated(ref: str, heads: set[str]) -> bool:
+    """生成工程内的路径：`docs/TruthChain.md` 实际在 `out/<品牌>/docs/` 下。"""
+    return any(h.startswith("out/") and (h == ref or h.endswith("/" + ref)) for h in heads)
+
+
+def _in_sibling(ref: str) -> bool:
+    """兄弟仓里有这个文件吗（干净克隆上兄弟仓不在位 → 返回 False，落回断链）。"""
+    import subprocess
+    ws = REPO.parent
+    for name in ("axiscope", "forensics-mcopilot", "forensics-code-factory"):
+        p = ws / name
+        if not p.is_dir():
+            continue
+        r = subprocess.run(["git", "-C", str(p), "ls-files", "-z"], capture_output=True)
+        if r.returncode == 0:
+            if ref in r.stdout.decode("utf-8", "replace").split("\0"):
+                return True
+    return False
+
+
 def _cross_repo(line: str, ref: str) -> bool:
     pos = line.find(ref)
     if pos < 0:
@@ -135,6 +166,7 @@ def main() -> int:
     ignored = ignored_prefixes()
 
     true_gaps, only_wt, rel_ok, record, counter_ex, ignored_hits, generated, cross = [], [], [], [], [], [], [], []
+    unverifiable = []
     external_refs = []
     top_dirs = {f.split("/")[0] for f in heads if "/" in f} | {f for f in heads if "." not in f}
     docs = sorted(f for f in heads if f.lower().endswith((".md", ".json")) and not f.startswith("data/raw/"))
@@ -175,9 +207,27 @@ def main() -> int:
                     if GENERATED.match(rel):
                         generated.append((rel, i, ref))
                         continue
-                    # 跨仓引用：行内点了兄弟仓的名字
+                    # 跨仓引用：行内点了兄弟仓的名字，或该文件确实在兄弟仓里
                     if _cross_repo(line, ref):
                         cross.append((rel, i, ref))
+                        continue
+                    # 书内相对路径（book/ 前缀）
+                    if _book_relative(ref, heads):
+                        rel_ok.append((rel, i, ref))
+                        continue
+                    # 生成工程内的路径（out/ 下的交付物）
+                    if _generated(ref, heads):
+                        generated.append((rel, i, ref))
+                        continue
+                    # 兄弟仓里存在的文件
+                    if _in_sibling(ref):
+                        cross.append((rel, i, ref))
+                        continue
+                    # **缺仓不可判定**：兄弟仓不在位时，找不到不等于不存在。
+                    # 判死会让读者拿到一份「全是断链」的假报告；静默放过又是假绿。
+                    # 单列一类，逐条打印，并在汇总里明写数。
+                    if _siblings_missing():
+                        unverifiable.append((rel, i, ref))
                         continue
                     # ⑧ 外部项目引用：报告里提到的**他项目**的文件
                     if EXTERNAL_REPORT.match(rel):
@@ -207,6 +257,13 @@ def main() -> int:
     for rel, i, ref in generated[:40]:
         print(f"  · {rel}:{i}  →  {ref}")
     print(f"  小计：{len(generated)} 处")
+
+    print("\n" + "=" * 92)
+    print("【一·补】缺仓不可判定（兄弟仓不在位）——不判 FAIL，但必须喊出来")
+    print("=" * 92)
+    for rel, i, ref in unverifiable[:40]:
+        print(f"  · {rel}:{i}  →  {ref}")
+    print(f"  小计：{len(unverifiable)} 处")
 
     print("\n" + "=" * 92)
     print("【二·补二】跨仓引用（行内点了兄弟仓的名字）——本仓找不到是正常的")
@@ -246,7 +303,9 @@ def main() -> int:
 
     print(f"\n真断链 {len(true_gaps)} ｜ 仅工作树 {len(only_wt)} ｜ 相对路径 {len(rel_ok)} "
           f"｜ 记录性 {len(record)} ｜ 反例 {len(counter_ex)} ｜ 不入库区 {len(ignored_hits)}"
-          f" ｜ 外部项目 {len(external_refs)}")
+          f" ｜ 外部项目 {len(external_refs)}"
+          f" ｜ 跨仓 {len(cross)} ｜ 生成物区 {len(generated)}"
+          f" ｜ **缺仓不可判定 {len(unverifiable)}**")
     return 1 if true_gaps else 0
 
 
