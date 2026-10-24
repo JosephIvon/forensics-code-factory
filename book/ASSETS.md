@@ -11,7 +11,7 @@
 
 
 
-**全卷合计：25 件 / 3,474 行。**
+**全卷合计：25 件 / 3,554 行。**
 
 ### 卷首卷尾
 
@@ -62,7 +62,7 @@
 | `tools/check_broken_links.py` | 313 |
 | `tools/locate.py` | 77 |
 | `tools/scan_absolute_paths.py` | 277 |
-| `tools/verify_book_numbers.py` | 296 |
+| `tools/verify_book_numbers.py` | 302 |
 | `tools/verify_crops_verbatim.py` | 68 |
 
 ### 规格与清单
