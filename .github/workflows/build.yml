@@ -1,6 +1,6 @@
 name: build
 
-# trae_factory 的 CI 证明两件事：
+# 本仓（forensics-code-factory；项目标识 trae_factory）的 CI 证明两件事：
 #   ① 生成器还能跑（退出码 0）；
 #   ② 单文件交付物与 gen/ 同源（concat 跑完不产生差异）。
 # 第二条是这次公开前审发现的真问题：入库的 html 落后于 gen/，
