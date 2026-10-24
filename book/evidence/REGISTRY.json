@@ -1,0 +1,42 @@
+{
+  "_about": "仓外原件登记表：按设计**不在本仓内**的文件，仓内留指针 + 出处 + 指纹。",
+  "_why": "本卷有几处坐标指向兄弟仓（官方真值 CSV 在 forensics-mcopilot 的 knowledge/sdks/official_api/，KB7 在 axiscope）。它们在作者机器上是在位的，所以本地审计能逐条打开、逐行核对；但干净克隆上没有那两个仓。这不是把断链放过，而是把『环境缺条件』与『坐标写错』分开：前者记 EXTERNAL 并打印，后者照样判失败。没有登记的仓外文件一律判失败——否则拼错一个文件名也会被放过。",
+  "_verification": "在位的机器上：audit_coords.py 会**真的打开**这些文件并逐行核对（输出里标 ［跨仓:仓名］）。不在位的机器上：标 [EXTERNAL]，并靠本表的 sha256 与 size 说明『它应该是哪一个文件』。",
+  "_sha_kind": "sha256 记的是**仓库内容（blob）**的哈希，不是工作区文件的哈希——本仓与兄弟仓都开了 core.autocrlf，工作区是 CRLF，直接对工作区算会得到另一个值。复核命令写在每条的 how_to_verify 里。 本表三条的 sha256 均为**已实算**值（2026-10-24）。",
+  "externals": [
+    {
+      "path": "knowledge/sdks/official_api/gts.csv",
+      "origin_repo": "forensics-mcopilot（公开仓）",
+      "used_by": [
+        "book/chapters/ch02-真值链.md",
+        "book/chapters/ch03-手册进知识库.md"
+      ],
+      "why": "第 2、3 章的『这条签名凭什么信』建立在官方 C# 绑定 CSV 上：`GT_Open(short channel,short param)` 这一行就是真值链的落点（gts.csv:326）。它属于真值库，本卷只引用不复刻。",
+      "how_to_verify": "git -C ../forensics-mcopilot cat-file blob HEAD:knowledge/sdks/official_api/gts.csv | head -n 330",
+      "size": 44973,
+      "sha256": "9e59b6ce6a282186af75d669958b7e830fcddc1510ee76da26b4c9eaba896636"
+    },
+    {
+      "path": "knowledge/sdks/official_api/gts_hdr.csv",
+      "origin_repo": "forensics-mcopilot（公开仓）",
+      "used_by": [
+        "book/chapters/ch03-手册进知识库.md"
+      ],
+      "why": "官方 C 头文件侧的真值：同一签名的**返回类型**在这里（gts_hdr.csv:367）。三层物证要相互独立，所以绑定与头文件分列两条。",
+      "how_to_verify": "git -C ../forensics-mcopilot cat-file blob HEAD:knowledge/sdks/official_api/gts_hdr.csv | head -n 370",
+      "size": 54740,
+      "sha256": "bdc9f440183454d8997d74f54407a212fc40f664c41c59d6773885171c8592db"
+    },
+    {
+      "path": "docs/kb/KB7-dataset-da-rus-cat.md",
+      "origin_repo": "axiscope（公开仓）",
+      "used_by": [
+        "book/chapters/ch04-双仓收尾实录.md"
+      ],
+      "why": "第 4 章记的一笔裁决（KB7 标题与数据集元数据是否逐字一致）发生在 axiscope 仓里，原记录就在那条 KB 上。本卷只引用那条记录，不复刻它。",
+      "how_to_verify": "git -C ../axiscope cat-file blob 7f7c37e:docs/kb/KB7-dataset-da-rus-cat.md | head -n 12",
+      "size": 56177,
+      "sha256": "63a272f61c7fe785c29b821456c00cd09c092476d96ec50fcb37c68735be8f00"
+    }
+  ]
+}
