@@ -40,5 +40,5 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 #: 「锚写错了」与「这是别的仓的锚」。值必须与那两个仓里实际存在的提交一致。
 FOREIGN_ANCHORS = {
     "axiscope": "3576c9c",
-    "mcopilot": "413aaba",
+    "mcopilot": "63d60db",
 }
