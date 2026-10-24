@@ -39,6 +39,6 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 #: 它们不是本仓坐标，所以各有各的锚；列在这里是为了让结构门禁能区分
 #: 「锚写错了」与「这是别的仓的锚」。值必须与那两个仓里实际存在的提交一致。
 FOREIGN_ANCHORS = {
-    "axiscope": "7f7c37e",
+    "axiscope": "3576c9c",
     "mcopilot": "413aaba",
 }
