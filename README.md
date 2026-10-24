@@ -154,30 +154,21 @@ out/                生成产物（已入库，可直接看）
 
 ---
 
-## 电子书在 `book/forensics-code-factory-ebook` 分支上
+## 电子书在同仓的 `book/` 下
 
 本仓带一本电子书《代码工厂与真值链卷》——四章，讲这套生成器**凭什么可信**，
-不是使用手册。它不在 `main` 上，而在一个独立分支里：
-
-**<https://github.com/JosephIvon/forensics-code-factory/tree/book/forensics-code-factory-ebook>**
-
-```bash
-git checkout book/forensics-code-factory-ebook     # 或者直接看上面那个链接
-```
-
-**为什么放在分支上而不是 main**：书里有 25 个文件（正文、裁剪件、入库的决策清单、
-六道门禁工具）。放在 main 上会把这个"拿来就能跑"的代码仓撑大，而多数想用工厂的人并不要书。
-放在分支上，两条路各走各的：要书就切分支，要代码就留 main。
+不是使用手册。2026-10-25 起它与代码**同仓同分支**：一个 clone 拿到「代码 + 书 + 门禁」，
+不用切分支。
 
 **这本书的特点**：书里每条事实性主张都挂坐标 `仓库@commit + 路径:行号`，
 锚点是**本仓自己的某一次提交**（`954c210`）。也就是说——
 
 ```bash
-git checkout book/forensics-code-factory-ebook
 git show 954c210:gen/adapters_kb.js | sed -n '37p'   # 书里引的那一行，就在这儿
 ```
 
 这是这本书唯一一条关于自己的主张：**每个主张都能被第三方当场核**，
-所以它自己也得能被当场核。门禁（`book/tools/`）每次运行都把全部坐标现读一遍。
+所以它自己也得能被当场核。门禁（`book/tools/`，六道）每次运行都把全部坐标现读一遍，
+CI 里也是逐条判退出码。
 
-想看目录与怎么读：切到那个分支看 `book/README.md`。
+想看目录与怎么读：[`book/README.md`](book/README.md)。

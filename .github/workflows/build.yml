@@ -56,7 +56,8 @@ jobs:
   # 六道门禁各自独立判退出码——**不许串成一个 shell 块**：那样只有最后一条的退出码
   # 会被 step 带出来，前面几条红了也照样全绿（axiscope 卷真踩过这个坑）。
   book:
-    if: github.ref == 'refs/heads/book/forensics-code-factory-ebook'
+    # 书并进 main 之后，这个作业在所有分支/PR 上都跑——
+    # 书与代码同仓同分支，没有「只在书分支上验」这回事了。
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
