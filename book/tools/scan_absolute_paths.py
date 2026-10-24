@@ -2,16 +2,18 @@
 # -*- coding: utf-8 -*-
 """scan_absolute_paths.py —— 公开前脱敏扫描（书 + 仓内文档）。
 
-抓三类东西：
+抓四类东西：
   ① **家目录 / 用户名**：机器上有、换台机器就没有，且能反推是谁的机器。
   ② **本机工作区路径**：写进书里，读者按它去找文件必然落空。
-  ③ **本项目自己的脱敏标识值**（`src/axiscope/assertions.py` 里的 `REDACT_TOKENS`）：
-     厂区名、ADS NetID 前缀、盘符。**这三样在仓内数据侧已经令牌化**，
+  ③ **脱敏标识值**（`Versuchsstand` / `141.58.` / 盘符）：这三样在数据侧已经令牌化，
      文档侧就不许再出现——出现了就等于"数据脱敏了、文档没脱"。
-
-第 ③ 条是本仓特有的：通用脱敏扫描抓不到它，因为 `141.58.` 与
-`Versuchsstand` 在**语法上就是普通字符串**。只有把 `REDACT_TOKENS`
-当黑名单扫，才能抓住"同一批标识值在文档侧漏出来"这件事。
+     ⚠ 这一档是从 axiscope 卷的工具链继承来的；本仓当前的数据里**没有**这三类值，
+     所以它在本仓实际恒为 0 处。保留是为了工具链一致，不是因为它在本仓查出了什么——
+     每次运行会把命中数打出来，恒 0 就是恒 0，不许被当成"查过了所以安全"。
+  ④ **绝对墙钟（日期 + 时刻）**：形如 `YYYY-MM-DD HH:MM:SS`。
+     本仓的生成器会把**生成那一刻**写进每份产物（`gen/adapter_common.js:7`），
+     于是它天然存在。判据见 `scan_wallclocks()` 的说明：
+     生成物区之外判死，生成物区内**每文件最多 1 处**（产物元数据，不删但卡上限）。
 
 判据：命中即判失败。第 ③ 类**工具链路径**（如 Python 安装位置）不在此列——
 那是通用安装位置，不是谁的隐私。
@@ -59,10 +61,38 @@ POLICY_CTX = re.compile(
 )
 CTX_LINES = 3   # 上下文窗口：命中行上下各 3 行
 
-# 扫哪些目录
-TARGET_DIRS = ["book", "docs", "README.md", "NOTICE.md"]
+# ④ 绝对墙钟（日期 + 时刻）。毫秒可有可无：本仓生成器写的是不带毫秒的 19 字符形式，
+# 但别的工具可能写带毫秒的——两种都该抓，所以毫秒不进正则的必需部分。
+WALLCLOCK_PAT = re.compile(r"\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}")
 
-SKIP_DIRS = {".git", "__pycache__", ".pytest_cache", "build", "data", "bench", "synth"}
+#: 正则自检夹具。**必须**能被 WALLCLOCK_PAT 命中。
+#: 命中不了 = 正则坏了 → 全仓"一处都没有" → 看起来是绿的，其实没在查。
+WALLCLOCK_FIXTURE = "2026-10-23 09:09:29"
+
+#: 生成物区：这些目录下允许**每文件一处**生成时刻（产物元数据）。
+GENERATED_PREFIXES = ("out/", "out_v_unique/")
+#: 每文件上限。卡在 1：多出第 2 处说明生成器在别处也写时刻，或真有值混了进来。
+WALLCLOCK_PER_FILE_CAP = 1
+
+#: 自豁免：**只有一处**——本文件里的自检夹具必须是真值（它的全部作用就是能被命中）。
+#: 上限卡在 1：本文件若出现第 2 处，说明有人把真值抄进了说明文字，照样判失败。
+#: 本文件其余示例一律写成占位形式 `YYYY-MM-DD HH:MM:SS`——那是故意的，不是笔误。
+SELF_EXEMPT = {
+    "book/tools/scan_absolute_paths.py": (
+        1, "自检夹具本身必须是能命中正则的真值——这是它存在的唯一理由"),
+}
+
+# 扫哪些目录：**全仓**。
+# 原来只扫 `book/ docs/ README.md NOTICE.md`——那样 `out/` 与 `gen/` 是盲区，
+# 而④恰恰主要落在那里。2026-10-24 实测：扩到全仓后 ①②③ 新增命中 0 处，
+# 所以扩面不引入噪声，只补漏。
+TARGET_DIRS = ["."]
+
+SKIP_DIRS = {".git", "__pycache__", ".pytest_cache", "node_modules"}
+
+#: 扫哪些后缀。既有文档类，也有源码/产物类——④要在产物里查，光看 .md 不够。
+SCAN_SUFFIXES = (".md", ".json", ".txt", ".py", ".js", ".cs", ".ps1",
+                 ".html", ".yml", ".yaml", ".tsv", ".csproj", ".sln")
 
 
 def iter_files():
@@ -72,10 +102,43 @@ def iter_files():
             yield p
         elif p.is_dir():
             for dp, dns, fns in os.walk(p):
-                dns[:] = [d for d in dns if d not in SKIP_DIRS]
-                for fn in fns:
-                    if fn.endswith((".md", ".json", ".txt", ".py")):
+                dns[:] = sorted(d for d in dns if d not in SKIP_DIRS)
+                for fn in sorted(fns):
+                    if fn.endswith(SCAN_SUFFIXES):
                         yield os.path.join(dp, fn)
+
+
+def scan_wallclocks():
+    """④ 绝对墙钟。返回 (违规, 豁免, 自检失败信息)。
+
+    违规 = 生成物区之外的一律违规，生成物区内超上限的也违规。
+    豁免 = 生成物区、且该文件命中数 ≤ 上限。
+    """
+    by_file: dict[str, list[tuple[int, str]]] = {}
+    for path in iter_files():
+        rel = os.path.relpath(path, str(REPO)).replace("\\", "/")
+        try:
+            lines = io.open(path, encoding="utf-8", errors="replace").read().splitlines()
+        except OSError:
+            continue
+        for i, ln in enumerate(lines, 1):
+            for m in WALLCLOCK_PAT.finditer(ln):
+                by_file.setdefault(rel, []).append((i, m.group(0)))
+
+    bad, exempt = [], []
+    for rel, occ in sorted(by_file.items()):
+        if rel in SELF_EXEMPT:
+            cap, why = SELF_EXEMPT[rel]
+        elif rel.startswith(GENERATED_PREFIXES):
+            cap, why = WALLCLOCK_PER_FILE_CAP, "生成物区：产物元数据（哪一次跑出来的）"
+        else:
+            cap, why = 0, "生成物区之外——没有任何产品语义可以替它辩护"
+        if len(occ) <= cap:
+            exempt.append((rel, len(occ), occ[0][1], why))
+        else:
+            for i, v in occ:
+                bad.append((rel, i, v))
+    return bad, exempt
 
 
 def load_known() -> dict:
@@ -168,15 +231,44 @@ def main() -> int:
             print(f"  ✗ {kid}  {f}:{i}")
         print()
 
+    # ---- ④ 绝对墙钟（单独一趟：它的豁免是"每文件上限"，不是"逐条判语境"）
+    print()
+    print("【④ 绝对墙钟（日期 + 时刻）】")
+    if WALLCLOCK_PAT.search(WALLCLOCK_FIXTURE):
+        print(f"  自检：正则命中夹具 `{WALLCLOCK_FIXTURE}` ✓")
+        wc_bad, wc_exempt = scan_wallclocks()
+    else:
+        print(f"  [FAIL] 正则坏了：夹具 `{WALLCLOCK_FIXTURE}` 命中不了——"
+              f"全仓会显示'一处都没有'，那是假绿")
+        wc_bad, wc_exempt = [], []
+        hits.append(("墙钟正则自检", "book/tools/scan_absolute_paths.py", 0, "夹具不命中"))
+    if wc_exempt:
+        print(f"  豁免（生成物区，每文件 ≤ {WALLCLOCK_PER_FILE_CAP} 处，共 {len(wc_exempt)} 个文件）：")
+        for rel, n, sample, why in wc_exempt[:6]:
+            print(f"    ○ {rel}  （{n} 处，例：{sample}）— {why}")
+        if len(wc_exempt) > 6:
+            print(f"    ○ …另 {len(wc_exempt) - 6} 个文件同口径（生成物区，每文件 ≤ 1 处）")
+        print("    理由：这是**产物元数据**（这一份是哪一次跑出来的），不是本机/上游的观测时钟，")
+        print("    也不含机器标识；删掉就改变产物语义，所以留，但上限卡死。")
+    if wc_bad:
+        print("  违规（生成物区之外，或生成物区内超上限）：")
+        for rel, i, v in wc_bad:
+            print(f"    ✗ {rel}:{i}  →  {v}")
+        hits.extend(("绝对墙钟", rel, i, v) for rel, i, v in wc_bad)
+    if not wc_bad and not wc_exempt:
+        print("  全仓 0 处绝对墙钟 ✓")
+
     if hits or undisclosed:
         if hits:
             print("命中（公开前必须清零）：")
             for label, f, i, frag in hits:
                 print(f"  ✗ [{label}] {f}:{i}  →  {frag[:60]}")
         print(f"\n合计 {len(hits)} 处未清（豁免/登记 {len(exempt)} 处）；"
+              f"墙钟豁免 {len(wc_exempt)} 个文件；"
               f"登记未披露 {len(undisclosed)} 处；已清偿登记 {len(cleared)} 条。")
         return 1
     print(f"合计 0 处（豁免/登记 {len(exempt)} 处）；"
+          f"墙钟豁免 {len(wc_exempt)} 个文件（生成物 + 自检夹具）；"
           f"已清偿登记 {len(cleared)} 条；必改项清零才算公开就绪。")
     return 0
 
